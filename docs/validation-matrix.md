@@ -13,7 +13,7 @@ This matrix records implementation evidence separately from environment-dependen
 | #10 | CPU default, DirectML adapter enumeration, unavailable-adapter explanations and no silent fallback | Adapter/catalog unit coverage and startup logic | WMI enumeration is heuristic; RTX 4050 DirectML OCR, Intel status, and CPU/GPU output parity remain unverified |
 | #11 | Persisted settings, safe CPU fallback, privacy-safe structured logs and retention limits | Settings and log retention tests | No known local code gap; full WPF settings interaction and real-machine log review remain unperformed |
 | #12 | MIT/licence notices, bilingual docs, model provenance gates, ZIP verifier, image exclusion and Windows CI | `pwsh ./scripts/test-release-security.ps1` | Verified model-containing self-contained ZIP and clean-machine offline launch |
-| #13 | Workflow, batch, workbook, security-gate and CI automation | Release build, 46 tests, security script, Windows CI definition | Real Windows 11 CPU/GPU/model run; Windows 10, Japanese and Thai remain unverified |
+| #13 | Workflow, batch, workbook, security-gate and CI automation | Release build, 46 tests, WPF `App.OnStartup` smoke test, security script, Windows CI definition | Published EXE/ZIP process launch, real Windows 11 CPU/GPU/model run, clean-machine offline launch; Windows 10, Japanese and Thai remain unverified |
 
 ## Current local commands
 
