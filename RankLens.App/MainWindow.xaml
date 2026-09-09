@@ -60,6 +60,7 @@
                     <DataGridTextColumn Header="同盟名稱" Binding="{Binding AllianceName, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridCheckBoxColumn Header="確認無同盟" Binding="{Binding NoAllianceConfirmed, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="積分" Binding="{Binding Score, UpdateSourceTrigger=PropertyChanged}" />
+                    <DataGridTextColumn Header="信心度" Binding="{Binding OverallConfidence, StringFormat={}{0:P0}}" IsReadOnly="True" />
                 </DataGrid.Columns>
                 </DataGrid>
                     <StackPanel Grid.Column="1" Margin="16,0,0,0">

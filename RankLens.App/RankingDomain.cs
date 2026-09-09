@@ -50,6 +50,7 @@ public sealed class RankingCandidate
     public double CommanderConfidence { get; init; } = 1;
     public double AllianceConfidence { get; init; } = 1;
     public double ScoreConfidence { get; init; } = 1;
+    public double OverallConfidence => Math.Min(Math.Min(RankConfidence, CommanderConfidence), Math.Min(AllianceConfidence, ScoreConfidence));
 
     public bool IsValid => Rank is >= 1 and <= 200
         && !string.IsNullOrWhiteSpace(CommanderName)
