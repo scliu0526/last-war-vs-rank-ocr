@@ -100,4 +100,18 @@ public class OcrCandidateParserTests
 
         Assert.Empty(result);
     }
+
+    [Fact]
+    public void ParseProvidedMondaySampleGroundTruth()
+    {
+        var result = OcrCandidateParser.ParsePlainText(RankingCategory.Monday, "288376_0.jpg", [
+            "1\tGBgogogo\t[TFIP]965熟成魚中心\t72,138,569"
+        ]);
+
+        var candidate = Assert.Single(result);
+        Assert.Equal(1, candidate.Rank);
+        Assert.Equal("GBgogogo", candidate.CommanderName);
+        Assert.Equal("[TFIP]965熟成魚中心", candidate.AllianceName);
+        Assert.Equal(72_138_569, candidate.Score);
+    }
 }
