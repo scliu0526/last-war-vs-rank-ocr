@@ -86,7 +86,13 @@ public sealed class WindowsOcrRecognitionSource : IRecognitionSource
         var results = await Task.WhenAll(engines.Select(async engine => await engine.RecognizeAsync(bitmap)));
         cancellationToken.ThrowIfCancellationRequested();
         var lines = results.SelectMany(result => result.Lines)
-            .Select(line => new OcrTextLine(line.Text, 1, 0, 0))
+            .Select(line =>
+            {
+                var boxes = line.Words.Select(word => word.BoundingRect).ToArray();
+                var top = boxes.Length == 0 ? 0 : (int)boxes.Min(box => box.Y);
+                var bottom = boxes.Length == 0 ? 0 : (int)boxes.Max(box => box.Y + box.Height);
+                return new OcrTextLine(line.Text, 1, top, bottom);
+            })
             .DistinctBy(line => line.Text, StringComparer.Ordinal)
             .ToArray();
         var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
