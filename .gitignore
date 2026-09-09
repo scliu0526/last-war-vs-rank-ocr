@@ -14,7 +14,9 @@ settings/
 appdata/
 
 # OCR models and release artifacts
-models/
+models/*
+!models/
+!models/manifest.json
 artifacts/
 releases/
 *.zip
