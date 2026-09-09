@@ -152,48 +152,6 @@ public static partial class OcrCandidateParser
             });
             index = Math.Max(index, nextRank - 1);
         }
-        if (result.Count == 0)
-        {
-            result.AddRange(ParseImplicitRows(category, sourceImage, ordered));
-        }
         return result;
-    }
-
-    // Some game screenshots render the rank glyph too small for the detector.
-    // When no explicit rank is available, preserve visual row order and assign
-    // ranks only to complete rows containing a score and commander text.
-    private static IEnumerable<RankingCandidate> ParseImplicitRows(
-        RankingCategory category, string sourceImage, IReadOnlyList<OcrTextLine> ordered)
-    {
-        var groups = new List<List<OcrTextLine>>();
-        foreach (var line in ordered)
-        {
-            var group = groups.LastOrDefault(item => line.Top - item.Min(x => x.Top) <= 70);
-            if (group is null) groups.Add([line]); else group.Add(line);
-        }
-
-        var rank = 1;
-        foreach (var group in groups)
-        {
-            var scoreLine = group
-                .Select(line => (Line: line, Digits: DigitsOnly(line.Text)))
-                .Where(item => item.Digits.Length >= 4)
-                .OrderByDescending(item => item.Digits.Length)
-                .FirstOrDefault();
-            if (scoreLine.Line is null || !long.TryParse(scoreLine.Digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out var score)) continue;
-            var textLines = group.Where(line => !ReferenceEquals(line, scoreLine.Line)
-                && !Regex.IsMatch(line.Text, @"^\s*[\d,.'’’\s]+\s*$"))
-                .Select(line => line.Text.Trim()).Where(text => text.Length > 0).ToArray();
-            if (textLines.Length == 0) continue;
-            var alliance = textLines.Length > 1 ? string.Join(" ", textLines.Skip(1)) : string.Empty;
-            yield return new RankingCandidate
-            {
-                Category = category, Rank = rank++, CommanderName = textLines[0], AllianceName = alliance,
-                Score = score, RankConfidence = 0.5, CommanderConfidence = group.Min(x => x.Confidence),
-                AllianceConfidence = alliance.Length == 0 ? 0 : group.Min(x => x.Confidence), ScoreConfidence = scoreLine.Line.Confidence,
-                NoAllianceConfirmed = string.Equals(alliance, "無同盟", StringComparison.Ordinal), IsSelected = false,
-                SourceImage = sourceImage, SourceTop = group.Min(x => x.Top), SourceBottom = group.Max(x => x.Bottom)
-            };
-        }
     }
 }
