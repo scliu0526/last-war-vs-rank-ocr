@@ -72,11 +72,23 @@ public sealed class WindowsOcrRecognitionSource : IRecognitionSource
         using var stream = await RandomAccessStreamReference.CreateFromFile(file).OpenReadAsync();
         var decoder = await BitmapDecoder.CreateAsync(stream);
         using var bitmap = await decoder.GetSoftwareBitmapAsync();
-        var engine = OcrEngine.TryCreateFromUserProfileLanguages()
-            ?? throw new InvalidOperationException("Windows 尚未安裝可用的 OCR 語言套件。");
-        var result = await engine.RecognizeAsync(bitmap);
+        var engines = OcrEngine.AvailableRecognizerLanguages
+            .Where(language => language.LanguageTag.StartsWith("zh-TW", StringComparison.OrdinalIgnoreCase)
+                || language.LanguageTag.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+                || language.LanguageTag.StartsWith("ko", StringComparison.OrdinalIgnoreCase)
+                || language.LanguageTag.StartsWith("th", StringComparison.OrdinalIgnoreCase)
+                || language.LanguageTag.StartsWith("ja", StringComparison.OrdinalIgnoreCase))
+            .Select(language => OcrEngine.TryCreateFromLanguage(language))
+            .Where(engine => engine is not null)
+            .Cast<OcrEngine>()
+            .ToArray();
+        if (engines.Length == 0) throw new InvalidOperationException("Windows 尚未安裝可用的 OCR 語言套件。");
+        var results = await Task.WhenAll(engines.Select(async engine => await engine.RecognizeAsync(bitmap)));
         cancellationToken.ThrowIfCancellationRequested();
-        var lines = result.Lines.Select(line => new OcrTextLine(line.Text, 1, 0, 0)).ToArray();
+        var lines = results.SelectMany(result => result.Lines)
+            .Select(line => new OcrTextLine(line.Text, 1, 0, 0))
+            .DistinctBy(line => line.Text, StringComparer.Ordinal)
+            .ToArray();
         var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
         var candidates = OcrCandidateParser.ParseRows(category, imagePaths[0], lines, 0);
         if (candidates.Count == 0)
