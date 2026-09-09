@@ -23,6 +23,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         RankingMondayPicker.SelectedDate = RankingWeek.Current(DateOnly.FromDateTime(DateTime.Today)).Monday.ToDateTime(TimeOnly.MinValue);
         CandidatesGrid.ItemsSource = Candidates;
+        CandidatesGrid.Columns.OfType<System.Windows.Controls.DataGridComboBoxColumn>().First().ItemsSource = Enum.GetValues<RankingCategory>();
         ConfidenceTextBox.Text = settings.ConfidenceThreshold.ToString("0.00", CultureInfo.InvariantCulture);
         ExecutionModeComboBox.ItemsSource = Enum.GetValues<RecognitionExecutionMode>();
         ExecutionModeComboBox.SelectedItem = settings.ExecutionMode;
@@ -175,6 +176,15 @@ public partial class MainWindow : Window
     }
 
     private RankingCandidate? SelectedCandidate => CandidatesGrid.SelectedItem as RankingCandidate;
+
+    private void CandidateCellEditEnding(object sender, System.Windows.Controls.DataGridCellEditEndingEventArgs e)
+    {
+        if (e.Row.Item is RankingCandidate candidate && e.Column.Header?.ToString() == "分類")
+        {
+            candidate.ClassificationResolved = candidate.Category != RankingCategory.PendingClassification;
+            candidate.IsSelected = candidate.IsValid;
+        }
+    }
 
     private void SelectCandidateClick(object sender, RoutedEventArgs e)
     {
