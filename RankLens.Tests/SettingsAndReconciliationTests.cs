@@ -81,6 +81,20 @@ public class SettingsAndReconciliationTests
     }
 
     [Fact]
+    public void ReviewStatusExplainsWhyCandidateIsNotSelected()
+    {
+        var candidate = new RankingCandidate
+        {
+            Category = RankingCategory.Monday, Rank = 1, CommanderName = "Commander",
+            AllianceName = "Alliance", Score = 1, CommanderConfidence = 0.5
+        };
+        CandidateSelectionPolicy.Apply([candidate], 0.8);
+        Assert.Equal("低信心，待確認", candidate.ReviewStatus);
+        candidate.RequiresNameCollisionResolution = true;
+        Assert.Equal("名稱碰撞，待裁決", candidate.ReviewStatus);
+    }
+
+    [Fact]
     public void CollisionResolutionSupportsMoveKeepBothAndIgnore()
     {
         RankingCandidate Candidate(int rank) => new()

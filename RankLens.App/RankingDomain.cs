@@ -46,6 +46,7 @@ public sealed class RankingCandidate
     public bool ClassificationResolved { get; set; } = true;
     public bool RequiresConflictResolution { get; set; }
     public bool RequiresNameCollisionResolution { get; set; }
+    public double SelectionThreshold { get; set; } = 0.95;
     public bool IsSelected { get; set; }
     public string SourceImage { get; init; } = string.Empty;
     public int SourceTop { get; init; }
@@ -55,6 +56,13 @@ public sealed class RankingCandidate
     public double AllianceConfidence { get; init; } = 1;
     public double ScoreConfidence { get; init; } = 1;
     public double OverallConfidence => Math.Min(Math.Min(RankConfidence, CommanderConfidence), Math.Min(AllianceConfidence, ScoreConfidence));
+    public string ReviewStatus =>
+        RequiresConflictResolution ? "資料衝突，待裁決" :
+        RequiresNameCollisionResolution ? "名稱碰撞，待裁決" :
+        !ClassificationResolved ? "待指定分類" :
+        string.IsNullOrWhiteSpace(AllianceName) && !NoAllianceConfirmed ? "同盟空白，待確認" :
+        OverallConfidence < SelectionThreshold ? "低信心，待確認" :
+        IsValid ? "可確認" : "資料不完整";
     public List<SourceObservation> Sources { get; } = [];
 
     public void AddSource(RankingCandidate candidate)
@@ -80,6 +88,7 @@ public static class CandidateSelectionPolicy
     {
         foreach (var candidate in candidates)
         {
+            candidate.SelectionThreshold = threshold;
             candidate.IsSelected = candidate.IsValid
                 && candidate.RankConfidence >= threshold
                 && candidate.CommanderConfidence >= threshold
