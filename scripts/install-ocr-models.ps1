@@ -3,11 +3,15 @@ param(
     [Parameter(Mandatory = $true)][string]$DetectionSha256,
     [Parameter(Mandatory = $true)][string]$RecognitionUrl,
     [Parameter(Mandatory = $true)][string]$RecognitionSha256,
-    [string]$DictionaryUrl,
-    [string]$DictionarySha256
+    [Parameter(Mandatory = $true)][string]$DictionaryUrl,
+    [Parameter(Mandatory = $true)][string]$DictionarySha256,
+    [Parameter(Mandatory = $true)][string]$LicenseNotice
 )
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($LicenseNotice) -or $LicenseNotice -match "PENDING|must be verified|placeholder") {
+    throw "LicenseNotice must be a verified, non-placeholder license statement."
+}
 $modelDir = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")) "models"
 New-Item -ItemType Directory -Path $modelDir -Force | Out-Null
 
@@ -20,5 +24,16 @@ function Download-Verified([string]$url, [string]$name, [string]$hash) {
 
 Download-Verified $DetectionUrl "PP-OCRv5_det.onnx" $DetectionSha256
 Download-Verified $RecognitionUrl "PP-OCRv5_rec.onnx" $RecognitionSha256
-if ($DictionaryUrl) { Download-Verified $DictionaryUrl "ppocrv5_dict.txt" $DictionarySha256 }
-Write-Host "OCR models downloaded and verified in $modelDir. Update models/manifest.json with the same hashes and license notice."
+Download-Verified $DictionaryUrl "ppocrv5_dict.txt" $DictionarySha256
+
+$manifest = [ordered]@{
+    detectionModel = "PP-OCRv5_det.onnx"
+    recognitionModel = "PP-OCRv5_rec.onnx"
+    characterDictionary = "ppocrv5_dict.txt"
+    license = $LicenseNotice
+    detectionSha256 = $DetectionSha256.ToUpperInvariant()
+    recognitionSha256 = $RecognitionSha256.ToUpperInvariant()
+    characterDictionarySha256 = $DictionarySha256.ToUpperInvariant()
+}
+$manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $modelDir "manifest.json")
+Write-Host "OCR models downloaded, verified, and manifest.json generated in $modelDir."
