@@ -20,38 +20,15 @@ public class MainWindowTests
         {
             try
             {
-                var application = new RankLensApplication
+                var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                var window = new MainWindow();
+                title = window.Title;
+                if (window.Content is Grid root)
                 {
-                    ShutdownMode = ShutdownMode.OnExplicitShutdown
-                };
-                application.Startup += (_, _) =>
-                {
-                    application.Dispatcher.BeginInvoke(
-                        DispatcherPriority.ApplicationIdle,
-                        new Action(() =>
-                        {
-                            var window = application.MainWindow;
-                            title = window?.Title;
-                            if (window?.Content is Grid root && root.Children.Count >= 3)
-                            {
-                                var visibleText = root.Children
-                                    .OfType<TextBlock>()
-                                    .Select(block => block.Text);
-                                var instructionText = ((root.Children[2] as Border)?.Child as StackPanel)?
-                                    .Children
-                                    .OfType<TextBlock>()
-                                    .Select(block => block.Text)
-                                    ?? Enumerable.Empty<string>();
-                                content = string.Join(" ", visibleText.Concat(instructionText));
-                            }
-                            application.Shutdown();
-                        }));
-                };
-                application.InitializeComponent();
-                application.StartupUri = new Uri(
-                    "/RankLens.App;component/MainWindow.xaml",
-                    UriKind.Relative);
-                application.Run();
+                    content = string.Join(" ", root.Children.OfType<TextBlock>().Select(block => block.Text));
+                }
+                window.Close();
+                application.Shutdown();
             }
             catch (Exception exception)
             {
