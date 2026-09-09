@@ -60,7 +60,7 @@ public class ImageInputDiscoveryTests
         var result = await new BatchRecognitionProcessor().ProcessAsync(
             ["one.jpg", "bad.jpg", "three.png"],
             new FakeRecognitionSource(),
-            new Progress<int>(progress.Add));
+            new RecordingProgress(progress));
 
         Assert.Equal(3, result.Count);
         Assert.Null(result[0].Error);

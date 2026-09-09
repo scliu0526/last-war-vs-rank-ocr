@@ -51,6 +51,10 @@ try {
     }
 
     $verifier = Join-Path $PSScriptRoot "verify-release.ps1"
+    Compress-Archive -Path (Join-Path $root "*") -DestinationPath $archive -Force
+    (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash | Set-Content -LiteralPath $checksum
+    & $verifier -Archive $archive -ChecksumFile $checksum
+
     foreach ($forbidden in @("screenshot/private.png", "private.gif", "private.bmp", "private.webp", "private.tiff", "private.ico")) {
         $entryPath = Join-Path $root $forbidden
         New-Item -ItemType Directory -Path (Split-Path $entryPath -Parent) -Force | Out-Null
