@@ -11,7 +11,15 @@ public sealed class LocalLog
     {
         this.settings = settings;
         folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RankLens", "Logs");
-        Directory.CreateDirectory(folder);
+        try
+        {
+            Directory.CreateDirectory(folder);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            folder = Path.Combine(Path.GetTempPath(), "RankLens", "Logs");
+            Directory.CreateDirectory(folder);
+        }
     }
 
     public void Write(string level, string message)
