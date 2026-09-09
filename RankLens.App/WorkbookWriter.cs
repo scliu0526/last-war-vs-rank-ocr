@@ -20,6 +20,7 @@ public sealed class RankingWorkbookWriter
 
     public void Write(string path, RankingWeek week, IEnumerable<RankingCandidate> candidates)
     {
+        var candidateList = candidates.ToList();
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         using var document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
         var workbookPart = document.AddWorkbookPart();
@@ -31,7 +32,7 @@ public sealed class RankingWorkbookWriter
         foreach (var (category, name) in Sheets)
         {
             var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-            worksheetPart.Worksheet = CreateWorksheet(category, candidates);
+            worksheetPart.Worksheet = CreateWorksheet(category, candidateList);
             var relationshipId = workbookPart.GetIdOfPart(worksheetPart);
             ((Sheets)workbookPart.Workbook.Sheets!).Append(
                 new Sheet { Name = name, SheetId = (uint)(workbookPart.Workbook.Sheets!.ChildElements.Count + 1), Id = relationshipId });
@@ -64,7 +65,14 @@ public sealed class RankingWorkbookWriter
                     throw new InvalidDataException("目標活頁簿不是可辨識的 RankLens 格式。");
                 }
 
-                foreach (var candidate in candidates.Where(candidate => candidate.IsSelected && candidate.IsValid))
+                var selected = candidates.Where(candidate => candidate.IsSelected && candidate.IsValid).ToList();
+                var duplicatePositions = selected.GroupBy(candidate => (candidate.Category, candidate.Rank)).Where(group => group.Count() > 1).ToList();
+                if (duplicatePositions.Count > 0)
+                {
+                    throw new InvalidDataException("同一排名位置有多筆已勾選候選，請先完成衝突裁決。");
+                }
+
+                foreach (var candidate in selected)
                 {
                     var sheetName = Sheets.Single(sheet => sheet.Category == candidate.Category).Name;
                     var sheet = workbook.Sheets!.Elements<Sheet>().Single(item => item.Name == sheetName);
