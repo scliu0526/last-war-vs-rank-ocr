@@ -62,7 +62,11 @@ public sealed class WindowsOcrRecognitionSource : IRecognitionSource
         cancellationToken.ThrowIfCancellationRequested();
         var lines = result.Lines.Select(line => new OcrTextLine(line.Text, 1, 0, 0)).ToArray();
         var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
-        var candidates = OcrCandidateParser.Parse(category, imagePaths[0], lines, 0);
+        var candidates = OcrCandidateParser.ParseRows(category, imagePaths[0], lines, 0);
+        if (candidates.Count == 0)
+        {
+            candidates = OcrCandidateParser.Parse(category, imagePaths[0], lines, 0);
+        }
         foreach (var candidate in candidates) candidate.ClassificationResolved = category != RankingCategory.PendingClassification;
         return candidates;
     }
