@@ -188,12 +188,12 @@ public partial class MainWindow : Window
         catch (OperationCanceledException)
         {
             BatchStatus.Text = "批次辨識已取消";
-            new LocalLog(settings).WriteStage("Warning", "Recognition", "Cancelled.");
+            new LocalLog(settings).WriteStage("Warning", "Recognition", "Cancelled.", Stopwatch.GetElapsedTime(recognitionStarted));
         }
         catch (Exception exception)
         {
             BatchStatus.Text = "辨識失敗";
-            new LocalLog(settings).WriteStage("Error", "Recognition", $"Error={exception.GetType().Name}.");
+            new LocalLog(settings).WriteStage("Error", "Recognition", $"Error={exception.GetType().Name}.", Stopwatch.GetElapsedTime(recognitionStarted));
             MessageBox.Show(exception.Message, "辨識失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
@@ -409,6 +409,7 @@ public partial class MainWindow : Window
         }
 
         SaveSettingsFromControls();
+        var workbookStarted = Stopwatch.GetTimestamp();
         var folder = settings.OutputFolder;
         RankLensWorkflow.WriteSummary summary;
         try
@@ -418,18 +419,18 @@ public partial class MainWindow : Window
         }
         catch (IOException exception)
         {
-            new LocalLog(settings).WriteStage("Warning", "WorkbookWrite", $"Error={exception.GetType().Name}.");
+            new LocalLog(settings).WriteStage("Warning", "WorkbookWrite", $"Error={exception.GetType().Name}.", Stopwatch.GetElapsedTime(workbookStarted));
             MessageBox.Show("Excel 檔案可能正在使用中，未修改正式檔案。請關閉檔案後重新按下寫入。", "寫入失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         catch (InvalidDataException exception)
         {
-            new LocalLog(settings).WriteStage("Warning", "WorkbookWrite", $"Error={exception.GetType().Name}.");
+            new LocalLog(settings).WriteStage("Warning", "WorkbookWrite", $"Error={exception.GetType().Name}.", Stopwatch.GetElapsedTime(workbookStarted));
             MessageBox.Show("現有 Excel 檔案格式不符合 RankLens 規格，未修改正式檔案。請先備份並移除或修正該檔案後再試。", "檔案格式錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         hasUnsavedReview = false;
-        new LocalLog(settings).WriteStage("Info", "WorkbookWrite", $"Updated={summary.Updated} Skipped={summary.Skipped}.");
+        new LocalLog(settings).WriteStage("Info", "WorkbookWrite", $"Updated={summary.Updated} Skipped={summary.Skipped}.", Stopwatch.GetElapsedTime(workbookStarted));
         var openFolder = MessageBox.Show($"已更新 {summary.Updated} 筆，略過 {summary.Skipped} 筆。\n檔案：{summary.Path}\n是否開啟輸出資料夾？", "完成", MessageBoxButton.YesNo, MessageBoxImage.Information);
         if (openFolder == MessageBoxResult.Yes)
         {

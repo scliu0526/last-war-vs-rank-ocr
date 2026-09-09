@@ -181,4 +181,26 @@ public class SettingsAndReconciliationTests
         Assert.False(first.RequiresConflictResolution);
         Assert.False(second.RequiresConflictResolution);
     }
+
+    [Fact]
+    public void ConflictResolutionIgnoringOneCandidateSelectsTheOnlyRemainingCandidate()
+    {
+        var first = new RankingCandidate
+        {
+            Category = RankingCategory.Monday, Rank = 1, CommanderName = "first",
+            AllianceName = "A", Score = 10, RequiresConflictResolution = true
+        };
+        var second = new RankingCandidate
+        {
+            Category = RankingCategory.Monday, Rank = 1, CommanderName = "second",
+            AllianceName = "B", Score = 20, RequiresConflictResolution = true
+        };
+
+        CandidateReconciler.ResolveConflict([first, second], second, ConflictResolution.IgnoreSelected);
+
+        Assert.True(first.IsSelected);
+        Assert.False(second.IsSelected);
+        Assert.False(first.RequiresConflictResolution);
+        Assert.False(second.RequiresConflictResolution);
+    }
 }
