@@ -22,6 +22,8 @@ public class OcrCandidateParserTests
         Assert.Equal("GBgogogo", candidate.CommanderName);
         Assert.Equal("[TFIP]965熟成魚中心", candidate.AllianceName);
         Assert.Equal(72138569, candidate.Score);
+        Assert.Equal(0, candidate.SourceTop);
+        Assert.Equal(40, candidate.SourceBottom);
     }
 
     [Fact]

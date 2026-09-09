@@ -46,6 +46,8 @@ public sealed class RankingCandidate
     public bool ClassificationResolved { get; set; } = true;
     public bool IsSelected { get; set; }
     public string SourceImage { get; init; } = string.Empty;
+    public int SourceTop { get; init; }
+    public int SourceBottom { get; init; }
     public double RankConfidence { get; init; } = 1;
     public double CommanderConfidence { get; init; } = 1;
     public double AllianceConfidence { get; init; } = 1;

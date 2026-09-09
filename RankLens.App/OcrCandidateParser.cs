@@ -86,7 +86,9 @@ public static partial class OcrCandidateParser
                 Score = score,
                 NoAllianceConfirmed = structured && string.Equals(match.Groups["alliance"].Value.Trim(), "無同盟", StringComparison.Ordinal),
                 IsSelected = true,
-                SourceImage = sourceImage
+                SourceImage = sourceImage,
+                SourceTop = line.Top,
+                SourceBottom = line.Bottom
             });
         }
 
@@ -119,7 +121,9 @@ public static partial class OcrCandidateParser
             {
                 Category = category, Rank = rank,
                 CommanderName = commander.Text.Trim(), AllianceName = alliance.Text.Trim(), Score = score,
-                IsSelected = true, SourceImage = sourceImage
+                IsSelected = true, SourceImage = sourceImage,
+                SourceTop = lines[index].Top,
+                SourceBottom = lines[scoreIndex].Bottom
             });
             index = scoreIndex;
         }
