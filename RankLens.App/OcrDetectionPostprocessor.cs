@@ -7,6 +7,26 @@ public sealed record DetectionBox(float Left, float Top, float Right, float Bott
 
 public static class OcrDetectionPostprocessor
 {
+    /// <summary>Applies the DB-style score gate and conservative unclip expansion used by the live OCR path.</summary>
+    public static IReadOnlyList<DetectionBox> ExtractDb(
+        OcrTensorOutput output, float threshold, int originalWidth, int originalHeight, float scale,
+        int paddedInputWidth, int paddedInputHeight, float unclipRatio = 1.5f)
+    {
+        if (unclipRatio < 1) throw new ArgumentOutOfRangeException(nameof(unclipRatio));
+        var boxes = Extract(output, threshold, originalWidth, originalHeight, scale, paddedInputWidth, paddedInputHeight);
+        return boxes.Select(box =>
+        {
+            var width = box.Right - box.Left;
+            var height = box.Bottom - box.Top;
+            var horizontal = width * (unclipRatio - 1) / 2;
+            var vertical = height * (unclipRatio - 1) / 2;
+            return new DetectionBox(
+                Math.Max(0, box.Left - horizontal), Math.Max(0, box.Top - vertical),
+                Math.Min(originalWidth, box.Right + horizontal), Math.Min(originalHeight, box.Bottom + vertical),
+                box.Confidence);
+        }).Where(box => box.Right - box.Left >= 2 && box.Bottom - box.Top >= 2).ToArray();
+    }
+
     public static IReadOnlyList<DetectionBox> Extract(OcrTensorOutput output, float threshold, int originalWidth, int originalHeight)
     {
         if (output.Dimensions.Length != 4 || output.Dimensions[0] != 1 || output.Dimensions[1] != 1)
