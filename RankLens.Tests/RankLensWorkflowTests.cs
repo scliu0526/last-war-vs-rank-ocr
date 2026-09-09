@@ -86,4 +86,25 @@ public class RankLensWorkflowTests
             if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
         }
     }
+
+    [Fact]
+    public void LockedWorkbookRemainsUntouched()
+    {
+        Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(folder, week.FileName);
+        try
+        {
+            var writer = new RankingWorkbookWriter();
+            writer.Write(path, week, [new RankingCandidate { Category = RankingCategory.Monday, Rank = 1, CommanderName = "old", AllianceName = "A", Score = 1, IsSelected = true }]);
+            var before = File.ReadAllBytes(path);
+            using (var lockStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                Assert.ThrowsAny<IOException>(() => writer.Update(path, week, [new RankingCandidate { Category = RankingCategory.Monday, Rank = 1, CommanderName = "new", AllianceName = "B", Score = 2, IsSelected = true }]));
+            }
+            Assert.Equal(before, File.ReadAllBytes(path));
+            Assert.False(File.Exists(path + ".ranklens.tmp"));
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
+    }
 }
