@@ -51,4 +51,28 @@ public class OcrCandidateParserTests
         Assert.Equal(expected, OcrCandidateParser.DetectCategory([label]));
         Assert.True(OcrCandidateParser.IsCategoryResolved([label]));
     }
+
+    [Fact]
+    public void ParseCarriesLineConfidenceIntoCandidateFields()
+    {
+        var result = OcrCandidateParser.Parse(
+            RankingCategory.Monday, "fixture.jpg",
+            [new OcrTextLine("1\tCommander\tAlliance\t123", 0.72f, 0, 10)], 0.5);
+
+        var candidate = Assert.Single(result);
+        Assert.Equal(0.72, candidate.OverallConfidence, 2);
+        Assert.False(candidate.IsSelected);
+    }
+
+    [Fact]
+    public void ParseKeepsLowConfidenceRowsForManualReview()
+    {
+        var result = OcrCandidateParser.Parse(
+            RankingCategory.Monday, "fixture.jpg",
+            [new OcrTextLine("1\tCommander\tAlliance\t123", 0.20f, 0, 10)], 0.95);
+
+        var candidate = Assert.Single(result);
+        Assert.Equal(0.20, candidate.OverallConfidence, 2);
+        Assert.False(candidate.IsSelected);
+    }
 }

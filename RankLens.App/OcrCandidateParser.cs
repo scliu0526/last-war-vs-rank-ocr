@@ -65,7 +65,7 @@ public static partial class OcrCandidateParser
             var match = StructuredRankLineRegex().Match(line.Text);
             var structured = match.Success;
             if (!structured) match = RankLineRegex().Match(line.Text);
-            if (!match.Success || line.Confidence < confidenceThreshold)
+            if (!match.Success)
             {
                 continue;
             }
@@ -83,8 +83,12 @@ public static partial class OcrCandidateParser
                 CommanderName = match.Groups["name"].Value.Trim(),
                 AllianceName = structured ? match.Groups["alliance"].Value.Trim() : string.Empty,
                 Score = score,
+                RankConfidence = line.Confidence,
+                CommanderConfidence = line.Confidence,
+                AllianceConfidence = structured ? line.Confidence : 0,
+                ScoreConfidence = line.Confidence,
                 NoAllianceConfirmed = structured && string.Equals(match.Groups["alliance"].Value.Trim(), "無同盟", StringComparison.Ordinal),
-                IsSelected = true,
+                IsSelected = false,
                 SourceImage = sourceImage,
                 SourceTop = line.Top,
                 SourceBottom = line.Bottom
@@ -104,7 +108,7 @@ public static partial class OcrCandidateParser
         for (var index = 0; index < lines.Count; index++)
         {
             var match = Regex.Match(lines[index].Text, @"^\s*(?<rank>\d{1,3})(?:\s+(?<score>[\d,\s]+))?\s*$");
-            if (!match.Success || lines[index].Confidence < confidenceThreshold) continue;
+            if (!match.Success) continue;
             if (!int.TryParse(match.Groups["rank"].Value, out var rank)) continue;
             var hasInlineScore = match.Groups["score"].Success;
             var commanderIndex = index + 1;
@@ -115,12 +119,15 @@ public static partial class OcrCandidateParser
             var alliance = lines[allianceIndex];
             var scoreText = hasInlineScore ? match.Groups["score"].Value : lines[scoreIndex].Text;
             if (!long.TryParse(NormalizeScore(scoreText), NumberStyles.Integer, CultureInfo.InvariantCulture, out var score)) continue;
-            if (commander.Confidence < confidenceThreshold || alliance.Confidence < confidenceThreshold) continue;
             result.Add(new RankingCandidate
             {
                 Category = category, Rank = rank,
                 CommanderName = commander.Text.Trim(), AllianceName = alliance.Text.Trim(), Score = score,
-                IsSelected = true, SourceImage = sourceImage,
+                RankConfidence = lines[index].Confidence,
+                CommanderConfidence = commander.Confidence,
+                AllianceConfidence = alliance.Confidence,
+                ScoreConfidence = lines[scoreIndex].Confidence,
+                IsSelected = false, SourceImage = sourceImage,
                 SourceTop = lines[index].Top,
                 SourceBottom = lines[scoreIndex].Bottom
             });

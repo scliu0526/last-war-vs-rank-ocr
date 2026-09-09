@@ -175,6 +175,7 @@ public partial class MainWindow : Window
             {
                 Candidates.Add(result);
             }
+            CandidateSelectionPolicy.Apply(Candidates, settings.ConfidenceThreshold);
             hasUnsavedReview = Candidates.Count > 0;
 
             var failures = results.Count(item => item.Error is not null);
