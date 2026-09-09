@@ -20,6 +20,7 @@ public sealed class RankLensWorkflow(RankingWorkbookWriter workbookWriter)
         var path = Path.Combine(outputFolder, session.Week.FileName);
         var selected = session.Candidates.Count(candidate => candidate.IsSelected && candidate.IsValid);
         var skipped = session.Candidates.Count - selected;
+        if (selected == 0) return new WriteSummary(0, skipped, path);
         if (File.Exists(path))
         {
             workbookWriter.Update(path, session.Week, session.Candidates);

@@ -9,6 +9,9 @@ public sealed record OcrImageTensor(DenseTensor<float> Tensor, int OriginalWidth
 
 public static class OcrImagePreprocessor
 {
+    private static readonly float[] Mean = [0.485f, 0.456f, 0.406f];
+    private static readonly float[] Std = [0.229f, 0.224f, 0.225f];
+
     public static async Task<OcrImageTensor> LoadAsync(string path, int targetSize = 960, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -23,9 +26,9 @@ public static class OcrImagePreprocessor
             for (var x = 0; x < bitmap.PixelWidth; x++)
             {
                 var offset = y * stride + x * 4;
-                tensor[0, 0, y, x] = source[offset + 2] / 255f;
-                tensor[0, 1, y, x] = source[offset + 1] / 255f;
-                tensor[0, 2, y, x] = source[offset] / 255f;
+                tensor[0, 0, y, x] = Normalize(source[offset + 2], 0);
+                tensor[0, 1, y, x] = Normalize(source[offset + 1], 1);
+                tensor[0, 2, y, x] = Normalize(source[offset], 2);
             }
         }
         return new OcrImageTensor(tensor, loaded.OriginalWidth, loaded.OriginalHeight, loaded.Scale);
@@ -38,15 +41,18 @@ public static class OcrImagePreprocessor
         var right = Math.Clamp((int)Math.Ceiling(box.Right * image.Scale), left + 1, image.Tensor.Dimensions[3]);
         var bottom = Math.Clamp((int)Math.Ceiling(box.Bottom * image.Scale), top + 1, image.Tensor.Dimensions[2]);
         var result = new DenseTensor<float>(new[] { 1, 3, targetHeight, targetWidth });
+        var resizedWidth = Math.Clamp((int)Math.Round((right - left) * (double)targetHeight / (bottom - top)), 1, targetWidth);
         for (var y = 0; y < targetHeight; y++)
-        for (var x = 0; x < targetWidth; x++)
+        for (var x = 0; x < resizedWidth; x++)
         {
-            var sourceX = left + Math.Min(right - left - 1, x * (right - left) / targetWidth);
+            var sourceX = left + Math.Min(right - left - 1, x * (right - left) / resizedWidth);
             var sourceY = top + Math.Min(bottom - top - 1, y * (bottom - top) / targetHeight);
             for (var channel = 0; channel < 3; channel++) result[0, channel, y, x] = image.Tensor[0, channel, sourceY, sourceX];
         }
         return result;
     }
+
+    private static float Normalize(byte value, int channel) => (value / 255f - Mean[channel]) / Std[channel];
 
     private static (BitmapSource Bitmap, int OriginalWidth, int OriginalHeight, float Scale) LoadBitmap(string path, int targetSize)
     {

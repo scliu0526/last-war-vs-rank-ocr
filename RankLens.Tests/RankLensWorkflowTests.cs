@@ -156,4 +156,24 @@ public class RankLensWorkflowTests
         }
         finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
     }
+
+    [Fact]
+    public void NoConfirmedCandidatesDoNotCreateOrUpdateWorkbook()
+    {
+        Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(folder, week.FileName);
+        try
+        {
+            var session = new ReviewSession(week, [new RankingCandidate
+            {
+                Category = RankingCategory.Monday, Rank = 1, CommanderName = "unchecked",
+                AllianceName = "A", Score = 1, IsSelected = false
+            }]);
+            var summary = new RankLensWorkflow(new RankingWorkbookWriter()).WriteConfirmed(folder, session);
+            Assert.Equal(0, summary.Updated);
+            Assert.False(File.Exists(path));
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
+    }
 }

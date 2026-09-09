@@ -78,7 +78,15 @@ public partial class MainWindow : Window
         };
         if (dialog.ShowDialog(this) == true)
         {
-            SetSelectedImages(dialog.FileNames, null);
+            try
+            {
+                var result = ImageInputDiscovery.Discover(dialog.FileNames, null);
+                SetSelectedImages(result.Accepted, null);
+            }
+            catch (InvalidOperationException exception)
+            {
+                MessageBox.Show(exception.Message, "圖片數量超過上限", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
     }
 
@@ -374,7 +382,9 @@ public partial class MainWindow : Window
             CandidatesGrid.Items.Refresh();
             return;
         }
-        CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.MoveRank, candidate.Rank);
+        var group = Candidates.Where(item => item.Category == candidate.Category
+            && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
+        CandidateReconciler.ResolveNameCollision(group, NameCollisionResolution.MoveRank, candidate.Rank);
         CandidatesGrid.Items.Refresh();
     }
 
@@ -389,7 +399,9 @@ public partial class MainWindow : Window
             }
             else
             {
-                CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.KeepBoth);
+                var collision = Candidates.Where(item => item.Category == candidate.Category
+                    && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
+                CandidateReconciler.ResolveNameCollision(collision, NameCollisionResolution.KeepBoth);
             }
             CandidatesGrid.Items.Refresh();
         }
@@ -406,7 +418,9 @@ public partial class MainWindow : Window
             }
             else
             {
-                CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.IgnoreNew);
+                var collision = Candidates.Where(item => item.Category == candidate.Category
+                    && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
+                CandidateReconciler.ResolveNameCollision(collision, NameCollisionResolution.IgnoreNew);
             }
             CandidatesGrid.Items.Refresh();
         }
@@ -423,6 +437,12 @@ public partial class MainWindow : Window
         if (Candidates.Count == 0)
         {
             MessageBox.Show("目前沒有可確認的候選排名資料。", "尚未辨識", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (!Candidates.Any(candidate => candidate.IsSelected && candidate.IsValid))
+        {
+            MessageBox.Show("目前沒有勾選且有效的候選排名資料，未更新 Excel。", "尚未確認", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

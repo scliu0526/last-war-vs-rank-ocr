@@ -77,8 +77,13 @@ public sealed class RankingWorkbookWriter
                     var sheetName = Sheets.Single(sheet => sheet.Category == candidate.Category).Name;
                     var sheet = workbook.Sheets!.Elements<Sheet>().Single(item => item.Name == sheetName);
                     var worksheet = (WorksheetPart)document.WorkbookPart.GetPartById(sheet.Id!);
-                    var row = worksheet.Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ElementAt(candidate.Rank);
+                    var rows = worksheet.Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ToArray();
+                    if (rows.Length < candidate.Rank + 1)
+                        throw new InvalidDataException("RankLens 活頁簿缺少完整的排名列。請建立新的活頁簿後再試。");
+                    var row = rows[candidate.Rank];
                     var cells = row.Elements<Cell>().ToList();
+                    if (cells.Count < 4)
+                        throw new InvalidDataException("RankLens 活頁簿的排名列欄位不完整。請建立新的活頁簿後再試。");
                     SetNumber(cells[0], candidate.Rank);
                     SetText(cells[1], candidate.CommanderName);
                     SetText(cells[2], candidate.NoAllianceConfirmed && string.IsNullOrWhiteSpace(candidate.AllianceName) ? "無同盟" : candidate.AllianceName);
