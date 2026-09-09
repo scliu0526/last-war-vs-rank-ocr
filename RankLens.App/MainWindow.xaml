@@ -8,6 +8,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" FontSize="28" FontWeight="SemiBold" Text="RankLens" />
@@ -17,9 +18,23 @@
             <DatePicker x:Name="RankingMondayPicker" Margin="8,0,12,0" SelectedDateFormat="Short" />
             <Button Click="SelectImagesClick" Content="選擇截圖" Padding="12,6" />
             <Button Margin="8,0,0,0" Click="SelectFolderClick" Content="選擇資料夾" Padding="12,6" />
+            <Button Margin="8,0,0,0" Click="RecognizeClick" Content="開始辨識" Padding="12,6" />
             <Button Margin="8,0,0,0" Click="WriteWorkbookClick" Content="寫入 Excel" Padding="12,6" />
         </StackPanel>
-        <Grid Grid.Row="3" Margin="0,24,0,0">
+        <StackPanel Grid.Row="3" Margin="0,12,0,0" Orientation="Horizontal">
+            <TextBlock VerticalAlignment="Center" Text="最低信心度：" />
+            <TextBox x:Name="ConfidenceTextBox" Width="56" Margin="8,0,16,0" VerticalContentAlignment="Center" />
+            <TextBlock VerticalAlignment="Center" Text="執行模式：" />
+            <ComboBox x:Name="ExecutionModeComboBox" Width="100" Margin="8,0,16,0" />
+            <TextBlock VerticalAlignment="Center" Text="輸出資料夾：" />
+            <TextBox x:Name="OutputFolderTextBox" Width="280" Margin="8,0,8,0" VerticalContentAlignment="Center" />
+            <Button Click="ChooseOutputFolderClick" Content="瀏覽" Padding="10,4" />
+            <TextBlock Margin="16,0,0,0" VerticalAlignment="Center" Text="Log 保留天數：" />
+            <TextBox x:Name="LogDaysTextBox" Width="40" Margin="6,0,4,0" VerticalContentAlignment="Center" />
+            <TextBlock VerticalAlignment="Center" Text="容量 MB：" />
+            <TextBox x:Name="LogSizeTextBox" Width="52" Margin="6,0,0,0" VerticalContentAlignment="Center" />
+        </StackPanel>
+        <Grid Grid.Row="4" Margin="0,24,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />

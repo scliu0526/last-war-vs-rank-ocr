@@ -20,6 +20,7 @@ public sealed class OcrRuntimeFactory
 {
     public InferenceSession Create(OcrRuntimeConfiguration configuration, OcrModelManifest manifest)
     {
+        new OcrModelStore().Validate(manifest, configuration.ModelDirectory);
         var modelPath = Path.Combine(configuration.ModelDirectory, manifest.DetectionModel);
         var recognitionPath = Path.Combine(configuration.ModelDirectory, manifest.RecognitionModel);
         var dictionaryPath = Path.Combine(configuration.ModelDirectory, manifest.CharacterDictionary);

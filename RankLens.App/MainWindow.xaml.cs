@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Globalization;
 using System.Windows;
 
 namespace RankLens.App;
@@ -19,6 +20,12 @@ public partial class MainWindow : Window
         InitializeComponent();
         RankingMondayPicker.SelectedDate = RankingWeek.Current(DateOnly.FromDateTime(DateTime.Today)).Monday.ToDateTime(TimeOnly.MinValue);
         CandidatesGrid.ItemsSource = Candidates;
+        ConfidenceTextBox.Text = settings.ConfidenceThreshold.ToString("0.00", CultureInfo.InvariantCulture);
+        ExecutionModeComboBox.ItemsSource = Enum.GetValues<RecognitionExecutionMode>();
+        ExecutionModeComboBox.SelectedItem = settings.ExecutionMode;
+        OutputFolderTextBox.Text = settings.OutputFolder;
+        LogDaysTextBox.Text = settings.LogRetentionDays.ToString(CultureInfo.InvariantCulture);
+        LogSizeTextBox.Text = (settings.LogRetentionBytes / (1024 * 1024)).ToString(CultureInfo.InvariantCulture);
     }
 
     private void SelectImagesClick(object sender, RoutedEventArgs e)
@@ -72,6 +79,67 @@ public partial class MainWindow : Window
         BatchStatus.Text = "正在取消批次處理…";
     }
 
+    private async void RecognizeClick(object sender, RoutedEventArgs e)
+    {
+        if (selectedImages.Length == 0)
+        {
+            MessageBox.Show("請先選擇圖片或資料夾。", "尚未選取圖片", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (RankingMondayPicker.SelectedDate is not DateTime selectedDate
+            || !RankingWeek.TryCreate(DateOnly.FromDateTime(selectedDate), out var week))
+        {
+            MessageBox.Show("請選擇星期一作為排名週起始日。", "日期錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        SaveSettingsFromControls();
+        batchCancellation?.Dispose();
+        batchCancellation = new CancellationTokenSource();
+        CancelBatchButton.IsEnabled = true;
+        BatchProgress.Value = 0;
+        BatchStatus.Text = "正在辨識…";
+        try
+        {
+            var source = new SidecarTextRecognitionSource();
+            var processor = new BatchRecognitionProcessor();
+            var progress = new Progress<int>(value => BatchProgress.Value = value);
+            var results = await processor.ProcessAsync(selectedImages, source, progress, batchCancellation.Token);
+            Candidates.Clear();
+            foreach (var result in results.Where(item => item.Candidates is not null).SelectMany(item => item.Candidates!))
+            {
+                Candidates.Add(result);
+            }
+
+            var failures = results.Count(item => item.Error is not null);
+            BatchStatus.Text = failures == 0
+                ? $"辨識完成，共 {Candidates.Count} 筆候選"
+                : $"辨識完成，共 {Candidates.Count} 筆候選，{failures} 張失敗";
+            new LocalLog(settings).Write("Info", $"Recognition completed: {results.Count} images, {Candidates.Count} candidates, {failures} failures.");
+        }
+        catch (OperationCanceledException)
+        {
+            BatchStatus.Text = "批次辨識已取消";
+        }
+        finally
+        {
+            CancelBatchButton.IsEnabled = false;
+            batchCancellation?.Dispose();
+            batchCancellation = null;
+        }
+    }
+
+    private void ChooseOutputFolderClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog { Title = "選擇 Excel 輸出資料夾" };
+        if (dialog.ShowDialog(this) == true)
+        {
+            OutputFolderTextBox.Text = dialog.FolderName;
+            SaveSettingsFromControls();
+        }
+    }
+
     private void WriteWorkbookClick(object sender, RoutedEventArgs e)
     {
         if (RankingMondayPicker.SelectedDate is not DateTime selectedDate
@@ -87,10 +155,53 @@ public partial class MainWindow : Window
             return;
         }
 
+        SaveSettingsFromControls();
         var folder = settings.OutputFolder;
         new RankLensWorkflow(new RankingWorkbookWriter())
             .WriteConfirmed(folder, new ReviewSession(week, Candidates));
         new LocalLog(settings).Write("Info", $"Workbook updated for {week.FileName}.");
         MessageBox.Show($"已寫入 {Path.Combine(folder, week.FileName)}。", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void SaveSettingsFromControls()
+    {
+        if (double.TryParse(ConfidenceTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var threshold))
+        {
+            settings.ConfidenceThreshold = Math.Clamp(threshold, 0, 1);
+        }
+        settings.ExecutionMode = ExecutionModeComboBox.SelectedItem is RecognitionExecutionMode mode ? mode : RecognitionExecutionMode.Cpu;
+        if (int.TryParse(LogDaysTextBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var days))
+        {
+            settings.LogRetentionDays = Math.Clamp(days, 1, 3650);
+        }
+        if (long.TryParse(LogSizeTextBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var megabytes))
+        {
+            settings.LogRetentionBytes = Math.Clamp(megabytes, 1, 4096) * 1024 * 1024;
+        }
+        if (!string.IsNullOrWhiteSpace(OutputFolderTextBox.Text))
+        {
+            settings.OutputFolder = OutputFolderTextBox.Text.Trim();
+            Directory.CreateDirectory(settings.OutputFolder);
+        }
+        settingsStore.Save(settings);
+        CandidateSelectionPolicy.Apply(Candidates, settings.ConfidenceThreshold);
+    }
+}
+
+internal sealed class SidecarTextRecognitionSource : IRecognitionSource
+{
+    public Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(IReadOnlyList<string> imagePaths, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var image = imagePaths.Single();
+        var sidecar = Path.ChangeExtension(image, ".txt");
+        if (!File.Exists(sidecar))
+        {
+            throw new InvalidOperationException("OCR 模型尚未安裝；可在圖片旁放置同名 .txt 文字檔進行離線預覽。正式 OCR 模型安裝後將由此介面取代文字側錄來源。");
+        }
+
+        var lines = File.ReadLines(sidecar).ToArray();
+        var candidates = OcrCandidateParser.ParsePlainText(OcrCandidateParser.DetectCategory(lines), image, lines);
+        return Task.FromResult(candidates);
     }
 }
