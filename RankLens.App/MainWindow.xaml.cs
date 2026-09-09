@@ -36,6 +36,14 @@ public partial class MainWindow : Window
         }
         AdapterComboBox.ItemsSource = gpuAdapters.Select(adapter => adapter.Name).ToArray();
         AdapterComboBox.SelectedItem = settings.AdapterName ?? gpuAdapters.FirstOrDefault()?.Name;
+        if (settings.ExecutionMode == RecognitionExecutionMode.DirectML
+            && (gpuAdapters.Count == 0 || !gpuAdapters.Any(adapter => string.Equals(adapter.Name, settings.AdapterName, StringComparison.Ordinal))))
+        {
+            settings.ExecutionMode = RecognitionExecutionMode.Cpu;
+            settings.AdapterName = null;
+            settingsStore.Save(settings);
+            BatchStatus.Text = "已保存的 GPU 無法使用，已回復 CPU 模式。";
+        }
         AdapterComboBox.IsEnabled = settings.ExecutionMode == RecognitionExecutionMode.DirectML && gpuAdapters.Count > 0;
         try
         {
