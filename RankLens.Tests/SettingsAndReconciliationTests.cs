@@ -215,6 +215,31 @@ public class SettingsAndReconciliationTests
     }
 
     [Fact]
+    public void CollisionResolutionUsesExplicitlySelectedCandidate()
+    {
+        RankingCandidate Candidate(int rank) => new()
+        {
+            Category = RankingCategory.Monday, Rank = rank, CommanderName = "same",
+            AllianceName = "A", Score = rank
+        };
+        var first = Candidate(1);
+        var second = Candidate(2);
+        CandidateReconciler.ResolveNameCollision([first, second], NameCollisionResolution.MoveRank, 10, second);
+        Assert.Equal(1, first.Rank);
+        Assert.Equal(10, second.Rank);
+        Assert.False(first.IsSelected);
+        Assert.True(second.IsSelected);
+
+        first.RequiresNameCollisionResolution = true;
+        second.RequiresNameCollisionResolution = true;
+        first.IsSelected = true;
+        second.IsSelected = true;
+        CandidateReconciler.ResolveNameCollision([first, second], NameCollisionResolution.IgnoreNew, selected: first);
+        Assert.False(first.IsSelected);
+        Assert.True(second.IsSelected);
+    }
+
+    [Fact]
     public void ConflictResolutionKeepsOnlyExplicitlySelectedCandidate()
     {
         var first = new RankingCandidate

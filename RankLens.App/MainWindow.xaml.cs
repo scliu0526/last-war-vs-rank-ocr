@@ -384,7 +384,7 @@ public partial class MainWindow : Window
         }
         var group = Candidates.Where(item => item.Category == candidate.Category
             && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
-        CandidateReconciler.ResolveNameCollision(group, NameCollisionResolution.MoveRank, candidate.Rank);
+        CandidateReconciler.ResolveNameCollision(group, NameCollisionResolution.MoveRank, candidate.Rank, candidate);
         CandidatesGrid.Items.Refresh();
     }
 
@@ -401,7 +401,7 @@ public partial class MainWindow : Window
             {
                 var collision = Candidates.Where(item => item.Category == candidate.Category
                     && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
-                CandidateReconciler.ResolveNameCollision(collision, NameCollisionResolution.KeepBoth);
+                CandidateReconciler.ResolveNameCollision(collision, NameCollisionResolution.KeepBoth, selected: candidate);
             }
             CandidatesGrid.Items.Refresh();
         }
@@ -420,7 +420,7 @@ public partial class MainWindow : Window
             {
                 var collision = Candidates.Where(item => item.Category == candidate.Category
                     && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
-                CandidateReconciler.ResolveNameCollision(collision, NameCollisionResolution.IgnoreNew);
+                CandidateReconciler.ResolveNameCollision(collision, NameCollisionResolution.IgnoreNew, selected: candidate);
             }
             CandidatesGrid.Items.Refresh();
         }

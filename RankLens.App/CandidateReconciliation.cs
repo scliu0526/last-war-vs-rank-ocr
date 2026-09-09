@@ -71,16 +71,20 @@ public static class CandidateReconciler
     public static void ResolveNameCollision(
         IReadOnlyList<RankingCandidate> candidates,
         NameCollisionResolution resolution,
-        int? movedRank = null)
+        int? movedRank = null,
+        RankingCandidate? selected = null)
     {
         if (candidates.Count == 0) return;
+        var target = selected is not null && candidates.Contains(selected)
+            ? selected
+            : resolution == NameCollisionResolution.IgnoreNew ? candidates[^1] : candidates[0];
         switch (resolution)
         {
             case NameCollisionResolution.MoveRank when movedRank is >= 1 and <= 200:
-                candidates[0].Rank = movedRank.Value;
+                target.Rank = movedRank.Value;
                 foreach (var candidate in candidates) candidate.RequiresNameCollisionResolution = false;
-                candidates[0].IsSelected = candidates[0].IsValid;
-                foreach (var candidate in candidates.Skip(1)) candidate.IsSelected = false;
+                target.IsSelected = target.IsValid;
+                foreach (var candidate in candidates.Where(candidate => !ReferenceEquals(candidate, target))) candidate.IsSelected = false;
                 break;
             case NameCollisionResolution.KeepBoth:
                 foreach (var candidate in candidates) candidate.RequiresNameCollisionResolution = false;
@@ -88,7 +92,7 @@ public static class CandidateReconciler
                 break;
             case NameCollisionResolution.IgnoreNew:
                 foreach (var candidate in candidates) candidate.RequiresNameCollisionResolution = false;
-                candidates[^1].IsSelected = false;
+                target.IsSelected = false;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(movedRank), "移動名次必須介於 1 到 200。");
