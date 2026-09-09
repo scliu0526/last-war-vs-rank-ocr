@@ -13,7 +13,7 @@ $manifestJson = $manifestText | ConvertFrom-Json
 foreach ($entry in @(
     @{ Name = $manifestJson.detectionModel; Hash = $manifestJson.detectionSha256 },
     @{ Name = $manifestJson.recognitionModel; Hash = $manifestJson.recognitionSha256 },
-    @{ Name = $manifestJson.characterDictionary; Hash = $null }
+    @{ Name = $manifestJson.characterDictionary; Hash = $manifestJson.characterDictionarySha256 }
 )) {
     $source = Join-Path (Join-Path $repo "models") $entry.Name
     if (-not (Test-Path -LiteralPath $source)) { throw "Missing model file: $($entry.Name)" }

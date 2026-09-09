@@ -16,7 +16,7 @@ public sealed class OnnxOcrRecognitionSource(
         cancellationToken.ThrowIfCancellationRequested();
         var path = imagePaths[0];
         var image = await OcrImagePreprocessor.LoadAsync(path, cancellationToken: cancellationToken);
-        var detectionOutputs = runtime.RunDetection(image.Tensor);
+        var detectionOutputs = await Task.Run(() => runtime.RunDetection(image.Tensor), cancellationToken);
         var detection = detectionOutputs.FirstOrDefault(IsProbabilityMap)
             ?? throw new InvalidDataException("Detection 模型沒有 [1,1,height,width] 輸出。");
         var boxes = OcrDetectionPostprocessor.Extract(detection, detectionThreshold, image.OriginalWidth, image.OriginalHeight)
@@ -27,7 +27,7 @@ public sealed class OnnxOcrRecognitionSource(
         {
             cancellationToken.ThrowIfCancellationRequested();
             var crop = OcrImagePreprocessor.CropAndResize(image, box);
-            var outputs = runtime.RunRecognition(crop);
+            var outputs = await Task.Run(() => runtime.RunRecognition(crop), cancellationToken);
             var recognition = outputs.FirstOrDefault(IsSequenceTensor)
                 ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
             var text = OcrRecognitionDecoder.Decode(recognition, runtime.Dictionary);

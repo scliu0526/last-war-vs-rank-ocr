@@ -144,7 +144,7 @@ public partial class MainWindow : Window
         BatchStatus.Text = "正在辨識…";
         try
         {
-            using var onnxRuntime = TryCreateOcrRuntime(settings);
+            using var onnxRuntime = await Task.Run(() => TryCreateOcrRuntime(settings), batchCancellation.Token);
             if (settings.ExecutionMode == RecognitionExecutionMode.DirectML && onnxRuntime is null)
             {
                 throw new InvalidOperationException("DirectML 需要已驗證的 PP-OCRv5 模型組；請先安裝模型或切換回 CPU 模式。");
@@ -193,6 +193,7 @@ public partial class MainWindow : Window
         var modelDirectory = Path.Combine(AppContext.BaseDirectory, "models");
         var manifestPath = Path.Combine(modelDirectory, "manifest.json");
         if (!File.Exists(manifestPath)) return null;
+        if (File.ReadAllText(manifestPath).Contains("PENDING_", StringComparison.OrdinalIgnoreCase)) return null;
         var manifest = new OcrModelStore().LoadManifest(manifestPath);
         var adapterId = new GpuAdapterCatalog().Enumerate()
             .FirstOrDefault(adapter => string.Equals(adapter.Name, currentSettings.AdapterName, StringComparison.Ordinal))?.DeviceId ?? 0;

@@ -23,14 +23,7 @@ public sealed class OcrModelStore
         }
         ValidateFile(manifest.DetectionModel, manifest.DetectionSha256, modelDirectory);
         ValidateFile(manifest.RecognitionModel, manifest.RecognitionSha256, modelDirectory);
-        if (Path.GetFileName(manifest.CharacterDictionary) != manifest.CharacterDictionary || manifest.CharacterDictionary.Contains("..", StringComparison.Ordinal))
-        {
-            throw new InvalidDataException("OCR manifest 字典檔名無效。");
-        }
-        if (!File.Exists(Path.Combine(modelDirectory, manifest.CharacterDictionary)))
-        {
-            throw new FileNotFoundException("找不到 OCR 字典檔。", manifest.CharacterDictionary);
-        }
+        ValidateFile(manifest.CharacterDictionary, manifest.CharacterDictionarySha256, modelDirectory);
     }
 
     private static void ValidateFile(string fileName, string expectedHash, string directory)

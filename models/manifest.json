@@ -4,5 +4,6 @@
   "characterDictionary": "ppocrv5_dict.txt",
   "license": "PaddleOCR license and model-specific notice must be verified before release",
   "detectionSha256": "PENDING_PINNED_MODEL_HASH",
-  "recognitionSha256": "PENDING_PINNED_MODEL_HASH"
+  "recognitionSha256": "PENDING_PINNED_MODEL_HASH",
+  "characterDictionarySha256": "PENDING_PINNED_MODEL_HASH"
 }

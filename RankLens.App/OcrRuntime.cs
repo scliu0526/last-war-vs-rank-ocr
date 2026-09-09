@@ -14,7 +14,8 @@ public sealed record OcrModelManifest(
     string CharacterDictionary,
     string License,
     string DetectionSha256,
-    string RecognitionSha256);
+    string RecognitionSha256,
+    string CharacterDictionarySha256 = "");
 
 public sealed record OcrRuntimeConfiguration(
     RecognitionExecutionMode Mode,
