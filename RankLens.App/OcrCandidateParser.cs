@@ -114,7 +114,7 @@ public static partial class OcrCandidateParser
             var commanderIndex = index + 1;
             var allianceIndex = commanderIndex + 1;
             var scoreIndex = hasInlineScore ? index : allianceIndex + 1;
-            if (scoreIndex >= lines.Count) continue;
+            if (commanderIndex >= lines.Count || allianceIndex >= lines.Count || scoreIndex >= lines.Count) continue;
             var commander = lines[commanderIndex];
             var alliance = lines[allianceIndex];
             var scoreText = hasInlineScore ? match.Groups["score"].Value : lines[scoreIndex].Text;
@@ -127,6 +127,7 @@ public static partial class OcrCandidateParser
                 CommanderConfidence = commander.Confidence,
                 AllianceConfidence = alliance.Confidence,
                 ScoreConfidence = lines[scoreIndex].Confidence,
+                NoAllianceConfirmed = string.Equals(alliance.Text.Trim(), "無同盟", StringComparison.Ordinal),
                 IsSelected = false, SourceImage = sourceImage,
                 SourceTop = lines[index].Top,
                 SourceBottom = lines[scoreIndex].Bottom

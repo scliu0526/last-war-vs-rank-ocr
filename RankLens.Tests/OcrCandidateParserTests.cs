@@ -75,4 +75,29 @@ public class OcrCandidateParserTests
         Assert.Equal(0.20, candidate.OverallConfidence, 2);
         Assert.False(candidate.IsSelected);
     }
+
+    [Fact]
+    public void ParseRowsRecognizesExplicitNoAlliance()
+    {
+        var result = OcrCandidateParser.ParseRows(RankingCategory.Monday, "fixture.jpg", [
+            new OcrTextLine("1", 0.99f, 0, 1),
+            new OcrTextLine("Commander", 0.99f, 2, 3),
+            new OcrTextLine("無同盟", 0.99f, 4, 5),
+            new OcrTextLine("123", 0.99f, 6, 7)
+        ]);
+
+        var candidate = Assert.Single(result);
+        Assert.True(candidate.NoAllianceConfirmed);
+        Assert.True(candidate.IsValid);
+    }
+
+    [Fact]
+    public void ParseRowsSkipsTruncatedInlineScoreRow()
+    {
+        var result = OcrCandidateParser.ParseRows(RankingCategory.Monday, "fixture.jpg", [
+            new OcrTextLine("1 123", 0.99f, 0, 1)
+        ]);
+
+        Assert.Empty(result);
+    }
 }

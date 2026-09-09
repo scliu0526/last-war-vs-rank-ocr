@@ -388,6 +388,12 @@ public partial class MainWindow : Window
             MessageBox.Show("Excel 檔案可能正在使用中，未修改正式檔案。請關閉檔案後重新按下寫入。", "寫入失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
+        catch (InvalidDataException exception)
+        {
+            new LocalLog(settings).Write("Warning", $"Workbook data invalid: {exception.GetType().Name}.");
+            MessageBox.Show("現有 Excel 檔案格式不符合 RankLens 規格，未修改正式檔案。請先備份並移除或修正該檔案後再試。", "檔案格式錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
         hasUnsavedReview = false;
         new LocalLog(settings).Write("Info", $"Workbook updated for {week.FileName}.");
         var openFolder = MessageBox.Show($"已更新 {summary.Updated} 筆，略過 {summary.Skipped} 筆。\n檔案：{summary.Path}\n是否開啟輸出資料夾？", "完成", MessageBoxButton.YesNo, MessageBoxImage.Information);
