@@ -315,14 +315,7 @@ public partial class MainWindow : Window
         {
             if (string.Equals(e.Column.Header?.ToString(), "分類", StringComparison.Ordinal))
             {
-                var sourceImage = candidate.SourceImage;
-                var related = Candidates.Where(item => string.Equals(item.SourceImage, sourceImage, StringComparison.Ordinal)
-                    || item.Sources.Any(source => string.Equals(source.ImagePath, sourceImage, StringComparison.Ordinal))).ToArray();
-                foreach (var item in related)
-                {
-                    item.Category = candidate.Category;
-                    item.ClassificationResolved = candidate.Category != RankingCategory.PendingClassification;
-                }
+                var related = CandidateReconciler.ApplyCategoryToSource(Candidates, candidate.SourceImage, candidate.Category);
                 CandidateSelectionPolicy.Apply(related, settings.ConfidenceThreshold);
             }
             else

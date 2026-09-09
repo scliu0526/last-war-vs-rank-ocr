@@ -99,6 +99,32 @@ public class SettingsAndReconciliationTests
     }
 
     [Fact]
+    public void CategoryCorrectionAppliesToEveryCandidateFromTheSameSource()
+    {
+        RankingCandidate Candidate(string source, RankingCategory category) => new()
+        {
+            Category = category, Rank = 1, CommanderName = "Commander", AllianceName = "Alliance", Score = 1,
+            SourceImage = source, ClassificationResolved = category != RankingCategory.PendingClassification
+        };
+        var candidates = new[]
+        {
+            Candidate("same.jpg", RankingCategory.PendingClassification),
+            Candidate("same.jpg", RankingCategory.PendingClassification),
+            Candidate("other.jpg", RankingCategory.PendingClassification)
+        };
+
+        var changed = CandidateReconciler.ApplyCategoryToSource(candidates, "same.jpg", RankingCategory.Monday);
+
+        Assert.Equal(2, changed.Count);
+        Assert.All(changed, candidate =>
+        {
+            Assert.Equal(RankingCategory.Monday, candidate.Category);
+            Assert.True(candidate.ClassificationResolved);
+        });
+        Assert.Equal(RankingCategory.PendingClassification, candidates[2].Category);
+    }
+
+    [Fact]
     public void ReviewStatusExplainsWhyCandidateIsNotSelected()
     {
         var candidate = new RankingCandidate

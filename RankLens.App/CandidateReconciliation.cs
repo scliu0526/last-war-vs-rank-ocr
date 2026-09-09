@@ -16,6 +16,22 @@ public sealed class CandidateReconciliationResult
 
 public static class CandidateReconciler
 {
+    public static IReadOnlyList<RankingCandidate> ApplyCategoryToSource(
+        IEnumerable<RankingCandidate> candidates,
+        string sourceImage,
+        RankingCategory category)
+    {
+        var related = candidates.Where(candidate =>
+            string.Equals(candidate.SourceImage, sourceImage, StringComparison.Ordinal)
+            || candidate.Sources.Any(source => string.Equals(source.ImagePath, sourceImage, StringComparison.Ordinal))).ToArray();
+        foreach (var candidate in related)
+        {
+            candidate.Category = category;
+            candidate.ClassificationResolved = category != RankingCategory.PendingClassification;
+        }
+        return related;
+    }
+
     public static void ResolveNameCollision(
         IReadOnlyList<RankingCandidate> candidates,
         NameCollisionResolution resolution,
