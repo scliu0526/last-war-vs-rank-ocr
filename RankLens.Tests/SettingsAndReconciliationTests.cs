@@ -51,4 +51,17 @@ public class SettingsAndReconciliationTests
         Assert.False(result.Candidates.Single(item => item.Rank == 1).IsSelected);
         Assert.False(result.Candidates.Single(item => item.Rank == 3).IsSelected);
     }
+
+    [Fact]
+    public void BlankAllianceRequiresExplicitNoAllianceConfirmation()
+    {
+        var candidate = new RankingCandidate
+        {
+            Category = RankingCategory.Monday, Rank = 1, CommanderName = "Commander",
+            AllianceName = string.Empty, Score = 1, IsSelected = true
+        };
+        Assert.False(candidate.IsValid);
+        candidate.NoAllianceConfirmed = true;
+        Assert.True(candidate.IsValid);
+    }
 }
