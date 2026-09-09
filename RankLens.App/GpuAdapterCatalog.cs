@@ -3,6 +3,7 @@ using System.Management;
 namespace RankLens.App;
 
 public sealed record GpuAdapterInfo(int DeviceId, string Name, bool IsLikelyDirectMLCompatible);
+public sealed record GpuAdapterOption(string Name, bool IsEnabled, string Reason);
 
 public sealed class GpuAdapterCatalog
 {

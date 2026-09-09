@@ -34,17 +34,22 @@ public partial class MainWindow : Window
         {
             gpuAdapters = [];
         }
-        AdapterComboBox.ItemsSource = gpuAdapters.Select(adapter => adapter.Name).ToArray();
-        AdapterComboBox.SelectedItem = settings.AdapterName ?? gpuAdapters.FirstOrDefault()?.Name;
+        AdapterComboBox.ItemsSource = gpuAdapters.Select(adapter => new GpuAdapterOption(
+            adapter.Name,
+            adapter.IsLikelyDirectMLCompatible,
+            adapter.IsLikelyDirectMLCompatible ? "可供 DirectML 使用" : "顯示卡狀態不可用，請使用 CPU 模式。")) .ToArray();
+        AdapterComboBox.SelectedValue = settings.AdapterName ?? gpuAdapters.FirstOrDefault(adapter => adapter.IsLikelyDirectMLCompatible)?.Name;
         if (settings.ExecutionMode == RecognitionExecutionMode.DirectML
-            && (gpuAdapters.Count == 0 || !gpuAdapters.Any(adapter => string.Equals(adapter.Name, settings.AdapterName, StringComparison.Ordinal))))
+            && (gpuAdapters.All(adapter => !adapter.IsLikelyDirectMLCompatible)
+                || !gpuAdapters.Any(adapter => adapter.IsLikelyDirectMLCompatible
+                    && string.Equals(adapter.Name, settings.AdapterName, StringComparison.Ordinal))))
         {
             settings.ExecutionMode = RecognitionExecutionMode.Cpu;
             settings.AdapterName = null;
             settingsStore.Save(settings);
             BatchStatus.Text = "已保存的 GPU 無法使用，已回復 CPU 模式。";
         }
-        AdapterComboBox.IsEnabled = settings.ExecutionMode == RecognitionExecutionMode.DirectML && gpuAdapters.Count > 0;
+        AdapterComboBox.IsEnabled = settings.ExecutionMode == RecognitionExecutionMode.DirectML && gpuAdapters.Any(adapter => adapter.IsLikelyDirectMLCompatible);
         try
         {
             var languages = WindowsOcrRecognitionSource.RequiredLanguageAvailability();
@@ -222,7 +227,8 @@ public partial class MainWindow : Window
     {
         if (AdapterComboBox is not null)
         {
-            AdapterComboBox.IsEnabled = ExecutionModeComboBox.SelectedItem is RecognitionExecutionMode.DirectML && gpuAdapters.Count > 0;
+            AdapterComboBox.IsEnabled = ExecutionModeComboBox.SelectedItem is RecognitionExecutionMode.DirectML
+                && gpuAdapters.Any(adapter => adapter.IsLikelyDirectMLCompatible);
         }
     }
 
@@ -385,7 +391,7 @@ public partial class MainWindow : Window
             settings.ConfidenceThreshold = Math.Clamp(threshold, 0, 1);
         }
         settings.ExecutionMode = ExecutionModeComboBox.SelectedItem is RecognitionExecutionMode mode ? mode : RecognitionExecutionMode.Cpu;
-        settings.AdapterName = AdapterComboBox.SelectedItem?.ToString();
+        settings.AdapterName = AdapterComboBox.SelectedValue?.ToString();
         if (int.TryParse(LogDaysTextBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var days))
         {
             settings.LogRetentionDays = Math.Clamp(days, 1, 3650);

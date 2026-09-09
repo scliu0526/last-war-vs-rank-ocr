@@ -28,7 +28,14 @@
             <TextBlock VerticalAlignment="Center" Text="執行模式：" />
             <ComboBox x:Name="ExecutionModeComboBox" Width="100" Margin="8,0,16,0" SelectionChanged="ExecutionModeChanged" />
             <TextBlock VerticalAlignment="Center" Text="GPU：" />
-            <ComboBox x:Name="AdapterComboBox" Width="180" Margin="6,0,12,0" />
+            <ComboBox x:Name="AdapterComboBox" Width="180" Margin="6,0,12,0" SelectedValuePath="Name">
+                <ComboBox.ItemContainerStyle>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+                        <Setter Property="ToolTip" Value="{Binding Reason}" />
+                    </Style>
+                </ComboBox.ItemContainerStyle>
+            </ComboBox>
             <TextBlock VerticalAlignment="Center" Text="輸出資料夾：" />
             <TextBox x:Name="OutputFolderTextBox" Width="280" Margin="8,0,8,0" VerticalContentAlignment="Center" />
             <Button Click="ChooseOutputFolderClick" Content="瀏覽" Padding="10,4" />
