@@ -5,6 +5,21 @@ namespace RankLens.App;
 
 public static class OcrRecognitionDecoder
 {
+    public static CtcDecoder.DecodedText DecodeWithConfidence(OcrTensorOutput output, IReadOnlyList<string> dictionary, int blankIndex = 0)
+    {
+        var dimensions = output.Dimensions;
+        if (dimensions.Length != 3 || dimensions[0] != 1)
+            throw new InvalidDataException("Recognition 模型輸出 shape 不符合 [1,time,classes]。");
+        var timesteps = new List<IReadOnlyList<float>>(dimensions[1]);
+        for (var time = 0; time < dimensions[1]; time++)
+        {
+            var values = new float[dimensions[2]];
+            Array.Copy(output.Values, time * dimensions[2], values, 0, dimensions[2]);
+            timesteps.Add(values);
+        }
+        return CtcDecoder.DecodeWithConfidence(timesteps, dictionary, blankIndex);
+    }
+
     public static string Decode(OcrTensorOutput output, IReadOnlyList<string> dictionary, int blankIndex = 0)
     {
         var dimensions = output.Dimensions;

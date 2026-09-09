@@ -30,8 +30,9 @@ public sealed class OnnxOcrRecognitionSource(
             var outputs = await Task.Run(() => runtime.RunRecognition(crop), cancellationToken);
             var recognition = outputs.FirstOrDefault(IsSequenceTensor)
                 ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
-            var text = OcrRecognitionDecoder.Decode(recognition, runtime.Dictionary);
-            if (!string.IsNullOrWhiteSpace(text)) lines.Add(new OcrTextLine(text.Trim(), box.Confidence, (int)box.Top, (int)box.Bottom));
+            var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
+            var confidence = Math.Min(box.Confidence, decoded.Confidence);
+            if (!string.IsNullOrWhiteSpace(decoded.Text)) lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)confidence, (int)box.Top, (int)box.Bottom));
         }
 
         var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
