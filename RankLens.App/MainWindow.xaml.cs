@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     private bool hasUnsavedReview;
     private readonly AppSettingsStore settingsStore = new();
     private readonly AppSettings settings;
+    private readonly IReadOnlyList<GpuAdapterInfo> gpuAdapters;
 
     public MainWindow()
     {
@@ -24,6 +25,17 @@ public partial class MainWindow : Window
         RankingMondayPicker.SelectedDate = RankingWeek.Current(DateOnly.FromDateTime(DateTime.Today)).Monday.ToDateTime(TimeOnly.MinValue);
         CandidatesGrid.ItemsSource = Candidates;
         CandidatesGrid.Columns.OfType<System.Windows.Controls.DataGridComboBoxColumn>().First().ItemsSource = Enum.GetValues<RankingCategory>();
+        try
+        {
+            gpuAdapters = new GpuAdapterCatalog().Enumerate().Where(adapter => adapter.IsLikelyDirectMLCompatible).ToArray();
+        }
+        catch
+        {
+            gpuAdapters = [];
+        }
+        AdapterComboBox.ItemsSource = gpuAdapters.Select(adapter => adapter.Name).ToArray();
+        AdapterComboBox.SelectedItem = settings.AdapterName ?? gpuAdapters.FirstOrDefault()?.Name;
+        AdapterComboBox.IsEnabled = settings.ExecutionMode == RecognitionExecutionMode.DirectML && gpuAdapters.Count > 0;
         ConfidenceTextBox.Text = settings.ConfidenceThreshold.ToString("0.00", CultureInfo.InvariantCulture);
         ExecutionModeComboBox.ItemsSource = Enum.GetValues<RecognitionExecutionMode>();
         ExecutionModeComboBox.SelectedItem = settings.ExecutionMode;
@@ -157,6 +169,14 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ExecutionModeChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (AdapterComboBox is not null)
+        {
+            AdapterComboBox.IsEnabled = ExecutionModeComboBox.SelectedItem is RecognitionExecutionMode.DirectML && gpuAdapters.Count > 0;
+        }
+    }
+
     private void CandidateSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         if (CandidatesGrid.SelectedItem is not RankingCandidate candidate || !File.Exists(candidate.SourceImage))
@@ -279,6 +299,7 @@ public partial class MainWindow : Window
             settings.ConfidenceThreshold = Math.Clamp(threshold, 0, 1);
         }
         settings.ExecutionMode = ExecutionModeComboBox.SelectedItem is RecognitionExecutionMode mode ? mode : RecognitionExecutionMode.Cpu;
+        settings.AdapterName = AdapterComboBox.SelectedItem?.ToString();
         if (int.TryParse(LogDaysTextBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var days))
         {
             settings.LogRetentionDays = Math.Clamp(days, 1, 3650);
