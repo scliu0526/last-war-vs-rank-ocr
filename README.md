@@ -23,3 +23,7 @@ For an automated offline check after downloading a release, run `scripts/verify-
 ## License
 
 Source code is released under the MIT License. See [LICENSE](LICENSE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Continuous validation
+
+GitHub Actions runs on a Windows runner for every push and pull request. It executes the Release build, the automated test suite, and the synthetic release-security gate. The workflow does not claim that real OCR models, private screenshots, or GPU hardware have been validated.

@@ -1,0 +1,30 @@
+name: RankLens CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore RankLens.slnx
+
+      - name: Build
+        run: dotnet build RankLens.slnx --no-restore --configuration Release -p:NuGetAudit=false
+
+      - name: Test
+        run: dotnet test RankLens.slnx --no-restore --configuration Release -p:NuGetAudit=false --verbosity:minimal
+
+      - name: Verify release security gates
+        shell: pwsh
+        run: ./scripts/test-release-security.ps1
