@@ -11,12 +11,18 @@ public static class OcrDetectionPostprocessor
     {
         if (output.Dimensions.Length != 4 || output.Dimensions[0] != 1 || output.Dimensions[1] != 1)
             throw new InvalidDataException("Detection 模型輸出必須是 [1,1,height,width] 機率圖。");
+        if (output.Dimensions[2] <= 0 || output.Dimensions[3] <= 0
+            || output.Dimensions[2] > int.MaxValue / output.Dimensions[3]
+            || output.Values.Length != output.Dimensions[2] * output.Dimensions[3])
+            throw new InvalidDataException("Detection 模型輸出長度與 shape 不一致。");
         var tensor = new DenseTensor<float>(output.Values, output.Dimensions);
         return Extract(tensor, threshold, originalWidth, originalHeight);
     }
 
     public static IReadOnlyList<DetectionBox> Extract(DenseTensor<float> map, float threshold, int originalWidth, int originalHeight)
     {
+        if (originalWidth <= 0 || originalHeight <= 0 || threshold is < 0 or > 1)
+            throw new ArgumentOutOfRangeException(nameof(threshold), "圖片尺寸必須為正數，threshold 必須介於 0 與 1 之間。");
         var dimensions = map.Dimensions.ToArray();
         if (dimensions.Length != 4 || dimensions[0] != 1 || dimensions[1] != 1)
         {
