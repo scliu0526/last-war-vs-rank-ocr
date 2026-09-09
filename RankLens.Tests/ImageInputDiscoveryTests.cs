@@ -4,6 +4,11 @@ namespace RankLens.Tests;
 
 public class ImageInputDiscoveryTests
 {
+    private sealed class RecordingProgress(List<int> values) : IProgress<int>
+    {
+        public void Report(int value) => values.Add(value);
+    }
+
     private sealed class FakeRecognitionSource : IRecognitionSource
     {
         public Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(IReadOnlyList<string> imagePaths, CancellationToken cancellationToken = default)
@@ -73,5 +78,18 @@ public class ImageInputDiscoveryTests
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             new BatchRecognitionProcessor().ProcessAsync(
                 ["one.jpg"], new FakeRecognitionSource(), cancellationToken: cancellation.Token));
+    }
+
+    [Fact]
+    public async Task OneHundredImageBatchCompletesWithMonotonicProgress()
+    {
+        var progress = new List<int>();
+        var paths = Enumerable.Range(1, 100).Select(index => $"{index}.jpg").ToArray();
+        var results = await new BatchRecognitionProcessor().ProcessAsync(
+            paths, new FakeRecognitionSource(), new RecordingProgress(progress));
+
+        Assert.Equal(100, results.Count);
+        Assert.Equal(100, progress[^1]);
+        Assert.True(progress.Zip(progress.Skip(1), (before, after) => after >= before).All(value => value));
     }
 }
