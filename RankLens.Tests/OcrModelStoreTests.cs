@@ -13,6 +13,14 @@ public class OcrModelStoreTests
     }
 
     [Fact]
+    public void PendingLicenseMarkerIsRejectedBeforeModelLoad()
+    {
+        var manifest = new OcrModelManifest("det.onnx", "rec.onnx", "dict.txt", "PENDING_MODEL_LICENSE", new string('a', 64), new string('b', 64));
+        var exception = Assert.Throws<InvalidOperationException>(() => new OcrModelStore().Validate(manifest, Path.GetTempPath()));
+        Assert.Contains("授權", exception.Message);
+    }
+
+    [Fact]
     public void ManifestCannotEscapeModelDirectory()
     {
         var manifest = new OcrModelManifest("..\\det.onnx", "rec.onnx", "dict.txt", "MIT", "abc", "def");

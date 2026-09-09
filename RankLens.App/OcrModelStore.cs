@@ -16,6 +16,7 @@ public sealed class OcrModelStore
     public void Validate(OcrModelManifest manifest, string modelDirectory)
     {
         if (string.IsNullOrWhiteSpace(manifest.License)
+            || manifest.License.Contains("PENDING", StringComparison.OrdinalIgnoreCase)
             || manifest.License.Contains("must be verified", StringComparison.OrdinalIgnoreCase)
             || manifest.License.Contains("placeholder", StringComparison.OrdinalIgnoreCase))
         {
