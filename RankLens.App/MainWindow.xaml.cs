@@ -150,6 +150,7 @@ public partial class MainWindow : Window
         }
 
         SaveSettingsFromControls();
+        var recognitionStarted = Stopwatch.GetTimestamp();
         batchCancellation?.Dispose();
         batchCancellation = new CancellationTokenSource();
         CancelBatchButton.IsEnabled = true;
@@ -182,7 +183,7 @@ public partial class MainWindow : Window
             BatchStatus.Text = failures == 0
                 ? $"辨識完成，共 {Candidates.Count} 筆候選，{reconciliation.Conflicts.Count} 個衝突，{reconciliation.NameCollisions.Count} 個名稱碰撞"
                 : $"辨識完成，共 {Candidates.Count} 筆候選，{failures} 張失敗，{reconciliation.Conflicts.Count} 個衝突";
-            new LocalLog(settings).Write("Info", $"Recognition completed: {results.Count} images, {Candidates.Count} candidates, {failures} failures, {reconciliation.Conflicts.Count} conflicts, {reconciliation.NameCollisions.Count} collisions.");
+            new LocalLog(settings).WriteStage("Info", "Recognition", $"Images={results.Count} Candidates={Candidates.Count} Failures={failures} Conflicts={reconciliation.Conflicts.Count} Collisions={reconciliation.NameCollisions.Count}.", Stopwatch.GetElapsedTime(recognitionStarted));
         }
         catch (OperationCanceledException)
         {
@@ -427,7 +428,7 @@ public partial class MainWindow : Window
             return;
         }
         hasUnsavedReview = false;
-        new LocalLog(settings).Write("Info", $"Workbook updated for {week.FileName}.");
+        new LocalLog(settings).WriteStage("Info", "WorkbookWrite", $"Updated={summary.Updated} Skipped={summary.Skipped}.");
         var openFolder = MessageBox.Show($"已更新 {summary.Updated} 筆，略過 {summary.Skipped} 筆。\n檔案：{summary.Path}\n是否開啟輸出資料夾？", "完成", MessageBoxButton.YesNo, MessageBoxImage.Information);
         if (openFolder == MessageBoxResult.Yes)
         {

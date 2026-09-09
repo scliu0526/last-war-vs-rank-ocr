@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 
 namespace RankLens.App;
 
@@ -28,6 +29,13 @@ public sealed class LocalLog
         var path = Path.Combine(folder, $"{DateTime.Now:yyyy-MM-dd}.log");
         File.AppendAllText(path, $"{DateTimeOffset.Now:O} [{level}] {safeMessage}{Environment.NewLine}");
         Prune();
+    }
+
+    public void WriteStage(string level, string stage, string message, TimeSpan? elapsed = null)
+    {
+        var version = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "unknown";
+        var duration = elapsed is null ? string.Empty : $" ElapsedMs={elapsed.Value.TotalMilliseconds:0}.";
+        Write(level, $"Version={version} Stage={stage}.{duration} {message}");
     }
 
     private void Prune()

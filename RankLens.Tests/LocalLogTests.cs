@@ -38,6 +38,23 @@ public class LocalLogTests
         finally { Directory.Delete(folder, true); }
     }
 
+    [Fact]
+    public void StructuredStageLogIncludesVersionStageAndDuration()
+    {
+        var folder = CreateFolder();
+        try
+        {
+            new LocalLog(new AppSettings(), folder).WriteStage(
+                "Info", "Recognition", "Images=1 Candidates=2.", TimeSpan.FromMilliseconds(12));
+            var text = File.ReadAllText(Directory.GetFiles(folder, "*.log").Single());
+            Assert.Contains("Version=", text);
+            Assert.Contains("Stage=Recognition", text);
+            Assert.Contains("ElapsedMs=12", text);
+            Assert.DoesNotContain("Commander", text);
+        }
+        finally { Directory.Delete(folder, true); }
+    }
+
     private static string CreateFolder()
     {
         var folder = Path.Combine(Path.GetTempPath(), "ranklens-log-tests", Guid.NewGuid().ToString("N"));
