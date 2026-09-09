@@ -93,14 +93,31 @@ public static class OcrDetectionPostprocessor
     {
         if (output.Dimensions.Length != 4 || output.Dimensions[0] != 1 || output.Dimensions[1] != 1)
             throw new InvalidDataException("Detection 模型輸出必須是 [1,1,height,width] 機率圖。 ");
-        return Extract(new DenseTensor<float>(output.Values, output.Dimensions), threshold, originalWidth, originalHeight, scale);
+        return Extract(new DenseTensor<float>(output.Values, output.Dimensions), threshold, originalWidth, originalHeight, scale,
+            output.Dimensions[3], output.Dimensions[2]);
+    }
+
+    public static IReadOnlyList<DetectionBox> Extract(
+        OcrTensorOutput output, float threshold, int originalWidth, int originalHeight, float scale,
+        int paddedInputWidth, int paddedInputHeight)
+    {
+        if (output.Dimensions.Length != 4 || output.Dimensions[0] != 1 || output.Dimensions[1] != 1)
+            throw new InvalidDataException("Detection 模型輸出必須是 [1,1,height,width] 機率圖。");
+        return Extract(new DenseTensor<float>(output.Values, output.Dimensions), threshold, originalWidth, originalHeight,
+            scale, paddedInputWidth, paddedInputHeight);
     }
 
     public static IReadOnlyList<DetectionBox> Extract(
         DenseTensor<float> map, float threshold, int originalWidth, int originalHeight, float scale)
+        => Extract(map, threshold, originalWidth, originalHeight, scale, map.Dimensions[3], map.Dimensions[2]);
+
+    public static IReadOnlyList<DetectionBox> Extract(
+        DenseTensor<float> map, float threshold, int originalWidth, int originalHeight, float scale,
+        int paddedInputWidth, int paddedInputHeight)
     {
         if (scale <= 0) throw new ArgumentOutOfRangeException(nameof(scale));
-        var padded = Extract(map, threshold, map.Dimensions[3], map.Dimensions[2]);
+        if (paddedInputWidth <= 0 || paddedInputHeight <= 0) throw new ArgumentOutOfRangeException(nameof(paddedInputWidth));
+        var padded = Extract(map, threshold, paddedInputWidth, paddedInputHeight);
         return padded.Select(box => new DetectionBox(
             Math.Clamp(box.Left / scale, 0, originalWidth),
             Math.Clamp(box.Top / scale, 0, originalHeight),

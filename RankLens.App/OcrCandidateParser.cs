@@ -117,7 +117,8 @@ public static partial class OcrCandidateParser
             var nextRank = index + 1;
             while (nextRank < ordered.Length
                 && (nextRank - index < 4
-                    || !Regex.IsMatch(ordered[nextRank].Text, @"^\s*\d{1,3}(?:\s+[\d,\s]+)?\s*$"))) nextRank++;
+                    || (!Regex.IsMatch(ordered[nextRank].Text, @"^\s*\d{1,3}(?:\s+[\d,\s]+)?\s*$")
+                        && ordered[nextRank].Top - ordered[index].Top <= 90))) nextRank++;
             var group = ordered[(index + 1)..nextRank];
             if (hasInlineScore)
             {

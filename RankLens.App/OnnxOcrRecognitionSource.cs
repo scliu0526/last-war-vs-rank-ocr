@@ -20,7 +20,8 @@ public sealed class OnnxOcrRecognitionSource(
         var detectionOutputs = await Task.Run(() => runtime.RunDetection(image.Tensor), cancellationToken);
         var detection = detectionOutputs.FirstOrDefault(IsProbabilityMap)
             ?? throw new InvalidDataException("Detection 模型沒有 [1,1,height,width] 輸出。");
-        var boxes = OcrDetectionPostprocessor.Extract(detection, detectionThreshold, image.OriginalWidth, image.OriginalHeight, image.Scale)
+        var boxes = OcrDetectionPostprocessor.Extract(detection, detectionThreshold, image.OriginalWidth, image.OriginalHeight, image.Scale,
+                image.Tensor.Dimensions[3], image.Tensor.Dimensions[2])
             .OrderBy(box => box.Top).ThenBy(box => box.Left)
             .ToArray();
         var lines = new List<OcrTextLine>(boxes.Length);
