@@ -124,6 +124,27 @@ public static partial class OcrCandidateParser
             {
                 group = [ordered[index]];
             }
+
+            if (!hasInlineScore && group.Length == 1
+                && TryParseDelimitedFields(group[0].Text, out var delimitedCommander, out var delimitedAlliance, out var delimitedScore))
+            {
+                result.Add(new RankingCandidate
+                {
+                    Category = category, Rank = rank,
+                    CommanderName = delimitedCommander, AllianceName = delimitedAlliance, Score = delimitedScore,
+                    RankConfidence = ordered[index].Confidence,
+                    CommanderConfidence = group[0].Confidence,
+                    AllianceConfidence = string.IsNullOrWhiteSpace(delimitedAlliance) ? 0 : group[0].Confidence,
+                    ScoreConfidence = group[0].Confidence,
+                    NoAllianceConfirmed = string.Equals(delimitedAlliance, "無同盟", StringComparison.Ordinal),
+                    IsSelected = false, SourceImage = sourceImage,
+                    SourceTop = ordered[index].Top,
+                    SourceBottom = group[0].Bottom
+                });
+                index = Math.Max(index, nextRank - 1);
+                continue;
+            }
+
             var scoreLine = group
                 .Select(line => (Line: line, Match: Regex.Match(line.Text, @"[\d][\d,，\s]*")))
                 .Where(item => item.Match.Success)
@@ -154,5 +175,22 @@ public static partial class OcrCandidateParser
             index = Math.Max(index, nextRank - 1);
         }
         return result;
+    }
+
+    private static bool TryParseDelimitedFields(string text, out string commander, out string alliance, out long score)
+    {
+        commander = string.Empty;
+        alliance = string.Empty;
+        score = 0;
+        var fields = text.Split(['\t', '|'], StringSplitOptions.TrimEntries);
+        if (fields.Length != 3 || fields[0].Length == 0
+            || !long.TryParse(DigitsOnly(fields[2]), NumberStyles.Integer, CultureInfo.InvariantCulture, out score))
+        {
+            return false;
+        }
+
+        commander = fields[0];
+        alliance = fields[1];
+        return true;
     }
 }
