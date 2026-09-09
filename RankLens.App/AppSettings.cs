@@ -40,7 +40,14 @@ public sealed class AppSettingsStore
 
         try
         {
-            return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(settingsPath)) ?? new AppSettings();
+            var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(settingsPath)) ?? new AppSettings();
+            var defaults = new AppSettings();
+            if (double.IsNaN(settings.ConfidenceThreshold) || double.IsInfinity(settings.ConfidenceThreshold)) settings.ConfidenceThreshold = defaults.ConfidenceThreshold;
+            settings.ConfidenceThreshold = Math.Clamp(settings.ConfidenceThreshold, 0, 1);
+            if (settings.LogRetentionDays <= 0) settings.LogRetentionDays = defaults.LogRetentionDays;
+            if (settings.LogRetentionBytes <= 0) settings.LogRetentionBytes = defaults.LogRetentionBytes;
+            if (string.IsNullOrWhiteSpace(settings.OutputFolder)) settings.OutputFolder = defaults.OutputFolder;
+            return settings;
         }
         catch (JsonException)
         {

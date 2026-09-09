@@ -31,6 +31,24 @@ public class SettingsAndReconciliationTests
     }
 
     [Fact]
+    public void SettingsLoadNormalizesUnsafeRanges()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(folder, "settings.json");
+        try
+        {
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(path, "{\"ConfidenceThreshold\":2,\"LogRetentionDays\":0,\"LogRetentionBytes\":-1,\"OutputFolder\":\"\"}");
+            var settings = new AppSettingsStore(path).Load();
+            Assert.Equal(1, settings.ConfidenceThreshold);
+            Assert.Equal(30, settings.LogRetentionDays);
+            Assert.Equal(100 * 1024 * 1024, settings.LogRetentionBytes);
+            Assert.False(string.IsNullOrWhiteSpace(settings.OutputFolder));
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
+    }
+
+    [Fact]
     public void ReconciliationMergesDuplicatesAndUnselectsConflictsAndCollisions()
     {
         RankingCandidate Candidate(int rank, string name, long score) => new()
