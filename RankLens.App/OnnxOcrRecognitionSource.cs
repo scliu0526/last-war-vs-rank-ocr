@@ -41,7 +41,7 @@ public sealed class OnnxOcrRecognitionSource(
         // The game uses a high-contrast outlined glyph for the rank column that
         // the detector can miss. Re-read only the left rank column for rows
         // that already have detected content; no rank is inferred if OCR fails.
-        foreach (var row in boxes.Where(box => box.Left > image.OriginalWidth * 0.2 && box.Top > image.OriginalHeight * 0.2)
+        foreach (var row in boxes.Where(box => box.Top > image.OriginalHeight * 0.2)
             .GroupBy(box => (int)Math.Round(box.Top / 70d)).Select(group => group.ToArray()))
         {
             var top = Math.Max(0, row.Min(box => box.Top) - 8);
