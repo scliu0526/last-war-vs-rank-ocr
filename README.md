@@ -6,13 +6,13 @@ RankLens is an unofficial, offline Windows desktop application for reviewing ran
 
 ## Status
 
-The project is under active implementation. The current baseline includes the .NET 10 WPF shell, fixed-candidate workflow, Open XML workbook creation/update, image discovery, review controls, cancellable batch processing, and a local ONNX OCR path (image preprocessing, text detection, crop recognition, CTC decoding, and ranking parsing). Runtime OCR requires a locally installed, SHA-256-pinned PP-OCRv5 ONNX bundle. Before that bundle is installed, the review flow supports deterministic offline preview through a same-name `.txt` sidecar next to each image (`rank<TAB>commander<TAB>alliance<TAB>score`).
+The current baseline includes the .NET 10 WPF shell, fixed-candidate workflow, Open XML workbook creation/update, image discovery, review controls, cancellable batch processing, and a local ONNX OCR path (image preprocessing, text detection, crop recognition, CTC decoding, and ranking parsing). The release workflow now accepts the SHA-256-pinned official PP-OCRv5 ONNX bundle described in `models/manifest.json`. Korean and Thai model variants, clean-machine launch, and hardware accuracy remain explicit validation boundaries. If no model bundle is installed, the review flow supports deterministic offline preview through a same-name `.txt` sidecar next to each image (`rank<TAB>commander<TAB>alliance<TAB>score`).
 
 See [README.zh-TW.md](README.zh-TW.md) for Traditional Chinese documentation.
 
 ## Model and release preparation
 
-The repository does not redistribute OCR binaries. After independently verifying a permitted model source and license, run `scripts/install-ocr-models.ps1` with the source URLs and SHA-256 values. The script writes only verified files to `models/`; `scripts/publish-win-x64.ps1` refuses unresolved hashes or mismatched files before creating the self-contained ZIP.
+The repository does not store OCR binaries in Git. After independently verifying a permitted model source and license, run `scripts/install-ocr-models.ps1` with the source URLs and SHA-256 values. The script writes only verified files to `models/`; `scripts/publish-win-x64.ps1` refuses unresolved hashes or mismatched files before creating the self-contained ZIP.
 
 ## Offline release verification
 

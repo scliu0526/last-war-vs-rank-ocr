@@ -36,4 +36,12 @@ The package archives contain the full license and third-party notice text. A rel
 
 ## OCR models
 
-No OCR model binaries are currently committed or distributed from this source baseline. PP-OCRv5 model names, sources, checksums, model-specific licenses, and redistribution notices must be recorded after independent verification before an offline release is published.
+The release ZIP may include the following official PaddlePaddle ONNX models. Model binaries remain outside Git history; the URLs, revisions, and SHA-256 values below identify the exact release inputs.
+
+| Model | Source / revision | SHA-256 | License / notice |
+| --- | --- | --- | --- |
+| PP-OCRv5 server detection ONNX | [PaddlePaddle/PP-OCRv5_server_det_onnx](https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det_onnx), `dcf248c` | `10803475A591F7DC623E24670FB5752EC94D39A1F8CF069AAC1B6F0CE19CFC85` | Apache-2.0; retain the model card and PaddleOCR notices |
+| PP-OCRv5 server recognition ONNX | [PaddlePaddle/PP-OCRv5_server_rec_onnx](https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx), `b70df21` | `D9DC333C9C7B042C6DFFB8E33D72B6F65C9C1D463D0A3C2F78174FEA55E94752` | Apache-2.0; retain the model card and PaddleOCR notices |
+| PP-OCR character dictionary | [PaddleOCR `ppocr_keys_v1.txt`](https://github.com/PaddlePaddle/PaddleOCR/blob/main/ppocr/utils/ppocr_keys_v1.txt), `main` at acquisition | `A1C84D9BDB9AB29043C58896224D32941783EB821629618416DCB08F12886492` | PaddleOCR repository license and notices apply |
+
+The current bundle is validated for the PP-OCRv5 server model's documented Chinese, Traditional Chinese, English, and Japanese scope. Korean and Thai require their documented language-specific model variants and separate accuracy validation before that broader claim is made.

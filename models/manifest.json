@@ -2,13 +2,13 @@
   "detectionModel": "PP-OCRv5_det.onnx",
   "recognitionModel": "PP-OCRv5_rec.onnx",
   "characterDictionary": "ppocrv5_dict.txt",
-  "license": "PaddleOCR license and model-specific notice must be verified before release",
-  "modelVersion": "PENDING_MODEL_VERSION",
-  "sourceRevision": "PENDING_MODEL_SOURCE_REVISION",
-  "detectionSourceUrl": "PENDING_SOURCE_URL",
-  "recognitionSourceUrl": "PENDING_SOURCE_URL",
-  "dictionarySourceUrl": "PENDING_SOURCE_URL",
-  "detectionSha256": "PENDING_PINNED_MODEL_HASH",
-  "recognitionSha256": "PENDING_PINNED_MODEL_HASH",
-  "characterDictionarySha256": "PENDING_PINNED_MODEL_HASH"
+  "license": "Apache-2.0; model cards and PaddleOCR notices: https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det_onnx and https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx",
+  "modelVersion": "PP-OCRv5 server ONNX (official PaddlePaddle repositories)",
+  "sourceRevision": "det:dcf248c; rec:b70df21; dict:PaddleOCR-main",
+  "detectionSourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det_onnx/resolve/main/inference.onnx?download=true",
+  "recognitionSourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx/resolve/main/inference.onnx?download=true",
+  "dictionarySourceUrl": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/ppocr_keys_v1.txt",
+  "detectionSha256": "10803475A591F7DC623E24670FB5752EC94D39A1F8CF069AAC1B6F0CE19CFC85",
+  "recognitionSha256": "D9DC333C9C7B042C6DFFB8E33D72B6F65C9C1D463D0A3C2F78174FEA55E94752",
+  "characterDictionarySha256": "A1C84D9BDB9AB29043C58896224D32941783EB821629618416DCB08F12886492"
 }
