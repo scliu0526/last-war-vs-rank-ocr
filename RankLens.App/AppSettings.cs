@@ -21,10 +21,15 @@ public sealed class AppSettings
 
 public sealed class AppSettingsStore
 {
-    private readonly string settingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RankLens",
-        "settings.json");
+    private readonly string settingsPath;
+
+    public AppSettingsStore(string? settingsPath = null)
+    {
+        this.settingsPath = settingsPath ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "RankLens",
+            "settings.json");
+    }
 
     public AppSettings Load()
     {
