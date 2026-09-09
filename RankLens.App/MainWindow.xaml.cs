@@ -256,7 +256,7 @@ public partial class MainWindow : Window
 
     private void CandidateSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (CandidatesGrid.SelectedItem is not RankingCandidate candidate || !File.Exists(candidate.SourceImage))
+        if (CandidatesGrid.SelectedItem is not RankingCandidate candidate)
         {
             SourceImageLabel.Text = string.Empty;
             SourceGeometryLabel.Text = string.Empty;
@@ -268,9 +268,21 @@ public partial class MainWindow : Window
         }
 
         if (candidate.Sources.Count == 0) candidate.AddSource(candidate);
+        var availableSource = candidate.Sources.FirstOrDefault(source => File.Exists(source.ImagePath));
+        if (availableSource is null)
+        {
+            SourceImageLabel.Text = string.Empty;
+            SourceGeometryLabel.Text = "來源圖片不存在";
+            SourceImagePreview.Source = null;
+            SourceList.ItemsSource = candidate.Sources;
+            SourceHighlight.Width = 0;
+            SourceHighlight.Height = 0;
+            return;
+        }
+
         SourceList.ItemsSource = candidate.Sources;
-        SourceList.SelectedIndex = 0;
-        ShowSource(candidate.Sources[0]);
+        SourceList.SelectedItem = availableSource;
+        ShowSource(availableSource);
     }
 
     private void SourceSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

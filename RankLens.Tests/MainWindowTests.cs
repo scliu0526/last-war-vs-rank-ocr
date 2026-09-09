@@ -72,6 +72,21 @@ public class MainWindowTests
                 highlightHeight = highlight.Height;
                 sourceLabel = ((TextBlock)window.FindName("SourceImageLabel")!).Text;
 
+                var fallbackCandidate = new RankingCandidate
+                {
+                    Category = RankingCategory.Monday, Rank = 4, CommanderName = "Fallback",
+                    AllianceName = "Alliance", Score = 6, SourceImage = Path.Combine(folder, "moved.png")
+                };
+                fallbackCandidate.Sources.Add(new SourceObservation(imagePath, 5, 15));
+                window.Candidates.Add(fallbackCandidate);
+                grid.SelectedItem = fallbackCandidate;
+                grid.UpdateLayout();
+                sourceLabel = ((TextBlock)window.FindName("SourceImageLabel")!).Text;
+                if (sourceLabel != "source.png")
+                {
+                    throw new InvalidOperationException("Preview did not select an available retained source.");
+                }
+
                 var conflictFirst = new RankingCandidate
                 {
                     Category = RankingCategory.Monday, Rank = 2, CommanderName = "First",
