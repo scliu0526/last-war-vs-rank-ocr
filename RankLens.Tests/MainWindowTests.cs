@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Threading;
 using RankLens.App;
 using RankLensApplication = RankLens.App.App;
@@ -33,9 +32,18 @@ public class MainWindowTests
                         {
                             var window = application.MainWindow;
                             title = window?.Title;
-                            content = window is null
-                                ? null
-                                : string.Join(" ", FindVisualChildren<TextBlock>(window).Select(block => block.Text));
+                            if (window?.Content is Grid root && root.Children.Count >= 3)
+                            {
+                                var visibleText = root.Children
+                                    .OfType<TextBlock>()
+                                    .Select(block => block.Text);
+                                var instructionText = ((root.Children[2] as Border)?.Child as StackPanel)?
+                                    .Children
+                                    .OfType<TextBlock>()
+                                    .Select(block => block.Text)
+                                    ?? Enumerable.Empty<string>();
+                                content = string.Join(" ", visibleText.Concat(instructionText));
+                            }
                             application.Shutdown();
                         }));
                 };
@@ -61,20 +69,4 @@ public class MainWindowTests
         Assert.Contains("排名截圖辨識器", content);
     }
 
-    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
-    {
-        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
-        {
-            var child = VisualTreeHelper.GetChild(root, index);
-            if (child is T typedChild)
-            {
-                yield return typedChild;
-            }
-
-            foreach (var descendant in FindVisualChildren<T>(child))
-            {
-                yield return descendant;
-            }
-        }
-    }
 }
