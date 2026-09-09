@@ -18,6 +18,8 @@ The repository does not redistribute OCR binaries. After independently verifying
 
 The publish script emits `RankLens-win-x64.zip.sha256`. Verify the archive before extracting it (for example, with `Get-FileHash -Algorithm SHA256 RankLens-win-x64.zip`) and compare the result with that file. The ZIP is unsigned; Windows SmartScreen may show an “unknown publisher” warning. The project does not claim that the executable is code-signed.
 
+For an automated offline check after downloading a release, run `scripts/verify-release.ps1 -Archive .\RankLens-win-x64.zip`. It compares the adjacent `.sha256` file and confirms that the archive contains the model files and a manifest without pending license or hash values.
+
 ## License
 
 Source code is released under the MIT License. See [LICENSE](LICENSE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

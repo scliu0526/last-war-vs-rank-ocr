@@ -1,0 +1,32 @@
+param(
+    [Parameter(Mandatory = $true)][string]$Archive,
+    [string]$ChecksumFile
+)
+
+$ErrorActionPreference = "Stop"
+$archivePath = (Resolve-Path -LiteralPath $Archive).Path
+if ([string]::IsNullOrWhiteSpace($ChecksumFile)) { $ChecksumFile = "$archivePath.sha256" }
+$checksumPath = (Resolve-Path -LiteralPath $ChecksumFile).Path
+$expected = (Get-Content -LiteralPath $checksumPath -Raw).Trim().Split()[0]
+if ($expected -notmatch '^[0-9A-Fa-f]{64}$') { throw "Checksum file must contain a canonical SHA-256 value." }
+$actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash
+if (-not [string]::Equals($actual, $expected, [StringComparison]::OrdinalIgnoreCase)) { throw "Release archive SHA-256 mismatch." }
+
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+try {
+    $required = @("models/manifest.json", "models/PP-OCRv5_det.onnx", "models/PP-OCRv5_rec.onnx", "models/ppocrv5_dict.txt")
+    $entryNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($entry in $zip.Entries) { [void]$entryNames.Add($entry.FullName.Replace('\', '/')) }
+    foreach ($name in $required) { if (-not $entryNames.Contains($name)) { throw "Release archive is missing $name" } }
+    $manifestEntry = $zip.GetEntry("models/manifest.json")
+    $reader = [System.IO.StreamReader]::new($manifestEntry.Open())
+    try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
+    if ($manifest.license -match "PENDING|must be verified|placeholder") { throw "Release manifest contains an unresolved license notice." }
+    foreach ($hash in @($manifest.detectionSha256, $manifest.recognitionSha256, $manifest.characterDictionarySha256)) {
+        if ($hash -notmatch '^[0-9A-Fa-f]{64}$') { throw "Release manifest contains a non-canonical model SHA-256 value." }
+    }
+}
+finally { $zip.Dispose() }
+
+Write-Host "Release archive checksum, model entries, and manifest validation passed."
