@@ -15,7 +15,7 @@ if (-not [string]::Equals($actual, $expected, [StringComparison]::OrdinalIgnoreC
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
 try {
-    $required = @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md", "models/manifest.json", "models/PP-OCRv5_det.onnx", "models/PP-OCRv5_rec.onnx", "models/ppocrv5_dict.txt")
+    $required = @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md", "licenses/paddleocr-models/NOTICE.md", "models/manifest.json", "models/PP-OCRv5_det.onnx", "models/PP-OCRv5_rec.onnx", "models/ppocrv5_dict.txt")
     $entryNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in $zip.Entries) { [void]$entryNames.Add($entry.FullName.Replace('\', '/')) }
     $forbiddenEntries = @($entryNames | Where-Object {

@@ -54,6 +54,9 @@ foreach ($modelFile in @($manifestJson.detectionModel, $manifestJson.recognition
 foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md")) {
     Copy-Item (Join-Path $repo $document) (Join-Path $out $document) -Force
 }
+$modelNotice = Join-Path $out "licenses\paddleocr-models"
+New-Item -ItemType Directory -Path $modelNotice -Force | Out-Null
+Copy-Item (Join-Path $repo "licenses\paddleocr-models\NOTICE.md") (Join-Path $modelNotice "NOTICE.md") -Force
 $globalPackages = $env:NUGET_PACKAGES
 if ([string]::IsNullOrWhiteSpace($globalPackages)) {
     $localsOutput = & dotnet nuget locals global-packages --list 2>$null
