@@ -45,6 +45,11 @@ foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "READM
 }
 $globalPackages = $env:NUGET_PACKAGES
 if ([string]::IsNullOrWhiteSpace($globalPackages)) {
+    $localsOutput = & dotnet nuget locals global-packages --list 2>$null
+    $localsLine = $localsOutput | Where-Object { $_ -match ':' } | Select-Object -First 1
+    if ($null -ne $localsLine) { $globalPackages = ($localsLine -split ':', 2)[1].Trim() }
+}
+if ([string]::IsNullOrWhiteSpace($globalPackages)) {
     $configPath = Join-Path $repo "NuGet.Config"
     if (Test-Path -LiteralPath $configPath) {
         $config = [xml](Get-Content -LiteralPath $configPath -Raw)
