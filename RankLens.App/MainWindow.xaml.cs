@@ -2,6 +2,7 @@ using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Globalization;
+using System.Diagnostics;
 using System.Windows;
 
 namespace RankLens.App;
@@ -11,6 +12,7 @@ public partial class MainWindow : Window
     public ObservableCollection<RankingCandidate> Candidates { get; } = [];
     private string[] selectedImages = [];
     private CancellationTokenSource? batchCancellation;
+    private bool hasUnsavedReview;
     private readonly AppSettingsStore settingsStore = new();
     private readonly AppSettings settings;
 
@@ -111,6 +113,7 @@ public partial class MainWindow : Window
             {
                 Candidates.Add(result);
             }
+            hasUnsavedReview = Candidates.Count > 0;
 
             var failures = results.Count(item => item.Error is not null);
             BatchStatus.Text = failures == 0
@@ -159,8 +162,20 @@ public partial class MainWindow : Window
         var folder = settings.OutputFolder;
         new RankLensWorkflow(new RankingWorkbookWriter())
             .WriteConfirmed(folder, new ReviewSession(week, Candidates));
+        hasUnsavedReview = false;
         new LocalLog(settings).Write("Info", $"Workbook updated for {week.FileName}.");
-        MessageBox.Show($"已寫入 {Path.Combine(folder, week.FileName)}。", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
+        var openFolder = MessageBox.Show($"已寫入 {Path.Combine(folder, week.FileName)}。\n是否開啟輸出資料夾？", "完成", MessageBoxButton.YesNo, MessageBoxImage.Information);
+        if (openFolder == MessageBoxResult.Yes)
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{Path.Combine(folder, week.FileName)}\"") { UseShellExecute = true });
+        }
+    }
+
+    private void WindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (!hasUnsavedReview || Candidates.Count == 0) return;
+        var result = MessageBox.Show("目前有尚未寫入 Excel 的候選資料，確定要關閉嗎？", "尚未儲存", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (result == MessageBoxResult.No) e.Cancel = true;
     }
 
     private void SaveSettingsFromControls()

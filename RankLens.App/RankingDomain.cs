@@ -42,6 +42,7 @@ public sealed class RankingCandidate
     public required string AllianceName { get; set; }
     public required long Score { get; set; }
     public bool NoAllianceConfirmed { get; set; }
+    public bool ClassificationResolved { get; set; } = true;
     public bool IsSelected { get; set; }
     public string SourceImage { get; init; } = string.Empty;
     public double RankConfidence { get; init; } = 1;
@@ -52,6 +53,7 @@ public sealed class RankingCandidate
     public bool IsValid => Rank is >= 1 and <= 200
         && !string.IsNullOrWhiteSpace(CommanderName)
         && Score >= 0
+        && ClassificationResolved
         && (!string.IsNullOrWhiteSpace(AllianceName) || NoAllianceConfirmed);
 }
 

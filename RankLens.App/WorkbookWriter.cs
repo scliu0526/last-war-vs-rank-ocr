@@ -24,6 +24,9 @@ public sealed class RankingWorkbookWriter
         using var document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
         var workbookPart = document.AddWorkbookPart();
         workbookPart.Workbook = new Workbook(new Sheets());
+        var stylesPart = workbookPart.AddNewPart<WorkbookStylesPart>();
+        stylesPart.Stylesheet = CreateStylesheet();
+        stylesPart.Stylesheet.Save();
 
         foreach (var (category, name) in Sheets)
         {
@@ -101,7 +104,7 @@ public sealed class RankingWorkbookWriter
     {
         var rows = new SheetData();
         rows.Append(Row(
-            TextCell("排名"), TextCell("指揮官名稱"), TextCell("同盟名稱"), TextCell("積分")));
+            TextCell("排名", 1), TextCell("指揮官名稱", 1), TextCell("同盟名稱", 1), TextCell("積分", 1)));
         var byRank = candidates.Where(candidate => candidate.Category == category && candidate.IsSelected && candidate.IsValid)
             .GroupBy(candidate => candidate.Rank)
             .ToDictionary(group => group.Key, group => group.Last());
@@ -111,7 +114,7 @@ public sealed class RankingWorkbookWriter
             {
                 rows.Append(Row(NumberCell(rank), TextCell(candidate.CommanderName),
                     TextCell(candidate.NoAllianceConfirmed && string.IsNullOrWhiteSpace(candidate.AllianceName) ? "無同盟" : candidate.AllianceName),
-                    NumberCell(candidate.Score)));
+                    NumberCell(candidate.Score, 2)));
             }
             else
             {
@@ -119,12 +122,25 @@ public sealed class RankingWorkbookWriter
             }
         }
 
-        return new Worksheet(rows);
+        var worksheet = new Worksheet();
+        worksheet.Append(new SheetViews(new SheetView
+        {
+            WorkbookViewId = 0,
+            Pane = new Pane { VerticalSplit = 1, TopLeftCell = "A2", ActivePane = PaneValues.BottomLeft, State = PaneStateValues.Frozen }
+        }));
+        worksheet.Append(new Columns(
+            new Column { Min = 1, Max = 1, Width = 10, CustomWidth = true },
+            new Column { Min = 2, Max = 2, Width = 24, CustomWidth = true },
+            new Column { Min = 3, Max = 3, Width = 30, CustomWidth = true },
+            new Column { Min = 4, Max = 4, Width = 16, CustomWidth = true }));
+        worksheet.Append(rows);
+        worksheet.Append(new AutoFilter { Reference = "A1:D201" });
+        return worksheet;
     }
 
     private static Row Row(params Cell[] cells) => new(cells);
-    private static Cell TextCell(string value) => new(new InlineString(new Text(value))) { DataType = CellValues.InlineString };
-    private static Cell NumberCell(long value) => new(new CellValue(value.ToString(System.Globalization.CultureInfo.InvariantCulture))) { DataType = CellValues.Number };
+    private static Cell TextCell(string value, uint? style = null) => new(new InlineString(new Text(value))) { DataType = CellValues.InlineString, StyleIndex = style };
+    private static Cell NumberCell(long value, uint? style = null) => new(new CellValue(value.ToString(System.Globalization.CultureInfo.InvariantCulture))) { DataType = CellValues.Number, StyleIndex = style };
 
     private static void SetText(Cell cell, string value)
     {
@@ -145,4 +161,15 @@ public sealed class RankingWorkbookWriter
     private static bool HasRankLensMarker(Workbook workbook) =>
         workbook.DefinedNames?.Elements<DefinedName>()
             .Any(name => string.Equals(name.Name?.Value, "_RankLensFormatVersion", StringComparison.Ordinal)) == true;
+
+    private static Stylesheet CreateStylesheet() => new(
+        new NumberingFormats(new NumberingFormat { NumberFormatId = 164, FormatCode = "#,##0" }),
+        new Fonts(new Font(), new Font(new Bold())),
+        new Fills(new Fill(new PatternFill { PatternType = PatternValues.None }), new Fill(new PatternFill { PatternType = PatternValues.Gray125 })),
+        new Borders(new Border()),
+        new CellStyleFormats(new CellFormat()),
+        new CellFormats(
+            new CellFormat(),
+            new CellFormat { FontId = 1, ApplyFont = true },
+            new CellFormat { NumberFormatId = 164, ApplyNumberFormat = true }));
 }
