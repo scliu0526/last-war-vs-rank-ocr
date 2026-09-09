@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="RankLens.App/RankLens.App.csproj" />
+  <Project Path="RankLens.Tests/RankLens.Tests.csproj" />
+</Solution>

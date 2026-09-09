@@ -1,0 +1,32 @@
+# Build output
+bin/
+obj/
+[Bb]uild/
+[Bb]uilds/
+
+# Local application data and generated workbooks
+*.xlsx
+*.xlsm
+*.bak
+logs/
+Logs/
+settings/
+appdata/
+
+# OCR models and release artifacts
+models/
+artifacts/
+releases/
+*.zip
+
+# Private ranking screenshots and local fixtures
+screenshot/
+test-fixtures/private/
+
+# IDE and OS files
+.vs/
+.idea/
+*.user
+*.suo
+Thumbs.db
+Desktop.ini
