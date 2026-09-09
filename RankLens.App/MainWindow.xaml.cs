@@ -36,6 +36,16 @@ public partial class MainWindow : Window
         AdapterComboBox.ItemsSource = gpuAdapters.Select(adapter => adapter.Name).ToArray();
         AdapterComboBox.SelectedItem = settings.AdapterName ?? gpuAdapters.FirstOrDefault()?.Name;
         AdapterComboBox.IsEnabled = settings.ExecutionMode == RecognitionExecutionMode.DirectML && gpuAdapters.Count > 0;
+        try
+        {
+            var languages = WindowsOcrRecognitionSource.RequiredLanguageAvailability();
+            LanguageStatus.Text = $"OCR 語言：{string.Join("、", languages.Where(item => item.Value).Select(item => item.Key))}";
+            LanguageStatus.ToolTip = string.Join(Environment.NewLine, languages.Select(item => $"{item.Key}: {(item.Value ? "可用" : "未安裝")}"));
+        }
+        catch
+        {
+            LanguageStatus.Text = "OCR 語言狀態無法讀取";
+        }
         ConfidenceTextBox.Text = settings.ConfidenceThreshold.ToString("0.00", CultureInfo.InvariantCulture);
         ExecutionModeComboBox.ItemsSource = Enum.GetValues<RecognitionExecutionMode>();
         ExecutionModeComboBox.SelectedItem = settings.ExecutionMode;

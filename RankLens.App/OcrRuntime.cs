@@ -46,6 +46,22 @@ public sealed class OcrRuntimeFactory
 /// <summary>Uses the Windows offline OCR engine when the matching language packs are installed.</summary>
 public sealed class WindowsOcrRecognitionSource : IRecognitionSource
 {
+    public static IReadOnlyList<string> AvailableLanguages() =>
+        OcrEngine.AvailableRecognizerLanguages.Select(language => language.LanguageTag).OrderBy(tag => tag).ToArray();
+
+    public static IReadOnlyDictionary<string, bool> RequiredLanguageAvailability()
+    {
+        var available = AvailableLanguages();
+        return new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["繁體中文"] = available.Any(tag => tag.StartsWith("zh-TW", StringComparison.OrdinalIgnoreCase)),
+            ["英文"] = available.Any(tag => tag.StartsWith("en", StringComparison.OrdinalIgnoreCase)),
+            ["韓文"] = available.Any(tag => tag.StartsWith("ko", StringComparison.OrdinalIgnoreCase)),
+            ["泰文"] = available.Any(tag => tag.StartsWith("th", StringComparison.OrdinalIgnoreCase)),
+            ["日文"] = available.Any(tag => tag.StartsWith("ja", StringComparison.OrdinalIgnoreCase))
+        };
+    }
+
     public async Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
         IReadOnlyList<string> imagePaths,
         CancellationToken cancellationToken = default)
