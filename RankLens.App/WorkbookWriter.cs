@@ -56,7 +56,7 @@ public sealed class RankingWorkbookWriter
             {
                 var workbook = document.WorkbookPart?.Workbook
                     ?? throw new InvalidDataException("找不到 RankLens 活頁簿內容。");
-                if (workbook.DefinedNames?.Elements<DefinedName>().All(name => name.Name != "_RankLensFormatVersion") != false)
+                if (!HasRankLensMarker(workbook))
                 {
                     throw new InvalidDataException("目標活頁簿不是可辨識的 RankLens 格式。");
                 }
@@ -103,7 +103,8 @@ public sealed class RankingWorkbookWriter
         rows.Append(Row(
             TextCell("排名"), TextCell("指揮官名稱"), TextCell("同盟名稱"), TextCell("積分")));
         var byRank = candidates.Where(candidate => candidate.Category == category && candidate.IsSelected && candidate.IsValid)
-            .ToDictionary(candidate => candidate.Rank);
+            .GroupBy(candidate => candidate.Rank)
+            .ToDictionary(group => group.Key, group => group.Last());
         for (var rank = 1; rank <= 200; rank++)
         {
             if (byRank.TryGetValue(rank, out var candidate))
@@ -140,4 +141,8 @@ public sealed class RankingWorkbookWriter
         cell.DataType = CellValues.Number;
         cell.AppendChild(new CellValue(value.ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
+
+    private static bool HasRankLensMarker(Workbook workbook) =>
+        workbook.DefinedNames?.Elements<DefinedName>()
+            .Any(name => string.Equals(name.Name?.Value, "_RankLensFormatVersion", StringComparison.Ordinal)) == true;
 }
