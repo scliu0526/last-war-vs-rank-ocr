@@ -4,6 +4,7 @@ namespace RankLens.App;
 
 public sealed class RankLensWorkflow(RankingWorkbookWriter workbookWriter)
 {
+    public sealed record WriteSummary(int Updated, int Skipped, string Path);
     public async Task<ReviewSession> RecognizeAsync(
         RankingWeek week,
         IReadOnlyList<string> imagePaths,
@@ -14,9 +15,11 @@ public sealed class RankLensWorkflow(RankingWorkbookWriter workbookWriter)
         return new ReviewSession(week, candidates);
     }
 
-    public void WriteConfirmed(string outputFolder, ReviewSession session)
+    public WriteSummary WriteConfirmed(string outputFolder, ReviewSession session)
     {
         var path = Path.Combine(outputFolder, session.Week.FileName);
+        var selected = session.Candidates.Count(candidate => candidate.IsSelected && candidate.IsValid);
+        var skipped = session.Candidates.Count - selected;
         if (File.Exists(path))
         {
             workbookWriter.Update(path, session.Week, session.Candidates);
@@ -25,5 +28,6 @@ public sealed class RankLensWorkflow(RankingWorkbookWriter workbookWriter)
         {
             workbookWriter.Write(path, session.Week, session.Candidates);
         }
+        return new WriteSummary(selected, skipped, path);
     }
 }

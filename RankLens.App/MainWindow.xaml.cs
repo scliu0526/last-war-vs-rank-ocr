@@ -172,11 +172,21 @@ public partial class MainWindow : Window
 
         SaveSettingsFromControls();
         var folder = settings.OutputFolder;
-        new RankLensWorkflow(new RankingWorkbookWriter())
-            .WriteConfirmed(folder, new ReviewSession(week, Candidates));
+        RankLensWorkflow.WriteSummary summary;
+        try
+        {
+            summary = new RankLensWorkflow(new RankingWorkbookWriter())
+                .WriteConfirmed(folder, new ReviewSession(week, Candidates));
+        }
+        catch (IOException exception)
+        {
+            new LocalLog(settings).Write("Warning", $"Workbook update unavailable: {exception.GetType().Name}.");
+            MessageBox.Show("Excel 檔案可能正在使用中，未修改正式檔案。請關閉檔案後重新按下寫入。", "寫入失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
         hasUnsavedReview = false;
         new LocalLog(settings).Write("Info", $"Workbook updated for {week.FileName}.");
-        var openFolder = MessageBox.Show($"已寫入 {Path.Combine(folder, week.FileName)}。\n是否開啟輸出資料夾？", "完成", MessageBoxButton.YesNo, MessageBoxImage.Information);
+        var openFolder = MessageBox.Show($"已更新 {summary.Updated} 筆，略過 {summary.Skipped} 筆。\n檔案：{summary.Path}\n是否開啟輸出資料夾？", "完成", MessageBoxButton.YesNo, MessageBoxImage.Information);
         if (openFolder == MessageBoxResult.Yes)
         {
             Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{Path.Combine(folder, week.FileName)}\"") { UseShellExecute = true });
