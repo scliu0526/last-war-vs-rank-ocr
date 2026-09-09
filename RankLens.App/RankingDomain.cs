@@ -44,6 +44,8 @@ public sealed class RankingCandidate
     public required long Score { get; set; }
     public bool NoAllianceConfirmed { get; set; }
     public bool ClassificationResolved { get; set; } = true;
+    public bool RequiresConflictResolution { get; set; }
+    public bool RequiresNameCollisionResolution { get; set; }
     public bool IsSelected { get; set; }
     public string SourceImage { get; init; } = string.Empty;
     public int SourceTop { get; init; }
@@ -65,6 +67,8 @@ public sealed class RankingCandidate
         && !string.IsNullOrWhiteSpace(CommanderName)
         && Score >= 0
         && ClassificationResolved
+        && !RequiresConflictResolution
+        && !RequiresNameCollisionResolution
         && (!string.IsNullOrWhiteSpace(AllianceName) || NoAllianceConfirmed);
 }
 

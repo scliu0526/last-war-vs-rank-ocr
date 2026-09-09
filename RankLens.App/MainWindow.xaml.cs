@@ -291,10 +291,10 @@ public partial class MainWindow : Window
 
     private void CandidateCellEditEnding(object sender, System.Windows.Controls.DataGridCellEditEndingEventArgs e)
     {
-        if (e.Row.Item is RankingCandidate candidate && e.Column.Header?.ToString() == "分類")
+        if (e.Row.Item is RankingCandidate candidate)
         {
             candidate.ClassificationResolved = candidate.Category != RankingCategory.PendingClassification;
-            candidate.IsSelected = candidate.IsValid;
+            CandidateSelectionPolicy.Apply([candidate], settings.ConfidenceThreshold);
         }
     }
 
@@ -302,7 +302,7 @@ public partial class MainWindow : Window
     {
         if (SelectedCandidate is { } candidate)
         {
-            candidate.IsSelected = candidate.IsValid;
+            CandidateSelectionPolicy.Apply([candidate], settings.ConfidenceThreshold);
             CandidatesGrid.Items.Refresh();
         }
     }

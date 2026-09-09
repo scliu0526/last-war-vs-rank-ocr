@@ -26,13 +26,16 @@ public static class CandidateReconciler
         {
             case NameCollisionResolution.MoveRank when movedRank is >= 1 and <= 200:
                 candidates[0].Rank = movedRank.Value;
+                foreach (var candidate in candidates) candidate.RequiresNameCollisionResolution = false;
                 candidates[0].IsSelected = candidates[0].IsValid;
                 foreach (var candidate in candidates.Skip(1)) candidate.IsSelected = false;
                 break;
             case NameCollisionResolution.KeepBoth:
+                foreach (var candidate in candidates) candidate.RequiresNameCollisionResolution = false;
                 foreach (var candidate in candidates) candidate.IsSelected = candidate.IsValid;
                 break;
             case NameCollisionResolution.IgnoreNew:
+                foreach (var candidate in candidates) candidate.RequiresNameCollisionResolution = false;
                 candidates[^1].IsSelected = false;
                 break;
             default:
@@ -61,6 +64,7 @@ public static class CandidateReconciler
                 foreach (var candidate in conflict)
                 {
                     candidate.AddSource(candidate);
+                    candidate.RequiresConflictResolution = true;
                     candidate.IsSelected = false;
                     merged.Add(candidate);
                 }
@@ -74,6 +78,7 @@ public static class CandidateReconciler
             .ToList();
         foreach (var collision in collisions.SelectMany(group => group))
         {
+            collision.RequiresNameCollisionResolution = true;
             collision.IsSelected = false;
         }
 
