@@ -7,6 +7,12 @@ public enum NameCollisionResolution
     IgnoreNew
 }
 
+public enum ConflictResolution
+{
+    KeepSelected,
+    IgnoreSelected
+}
+
 public sealed class CandidateReconciliationResult
 {
     public required IReadOnlyList<RankingCandidate> Candidates { get; init; }
@@ -16,6 +22,36 @@ public sealed class CandidateReconciliationResult
 
 public static class CandidateReconciler
 {
+    public static void ResolveConflict(
+        IReadOnlyList<RankingCandidate> candidates,
+        RankingCandidate selected,
+        ConflictResolution resolution)
+    {
+        if (candidates.Count == 0 || !candidates.Contains(selected)) return;
+        switch (resolution)
+        {
+            case ConflictResolution.KeepSelected:
+                foreach (var candidate in candidates)
+                {
+                    candidate.RequiresConflictResolution = false;
+                    candidate.IsSelected = ReferenceEquals(candidate, selected) && candidate.IsValid;
+                }
+                break;
+            case ConflictResolution.IgnoreSelected:
+                selected.IsSelected = false;
+                selected.RequiresConflictResolution = false;
+                var remaining = candidates.Where(candidate => !ReferenceEquals(candidate, selected)).ToArray();
+                if (remaining.Length == 1)
+                {
+                    remaining[0].RequiresConflictResolution = false;
+                    remaining[0].IsSelected = remaining[0].IsValid;
+                }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(resolution));
+        }
+    }
+
     public static IReadOnlyList<RankingCandidate> ApplyCategoryToSource(
         IEnumerable<RankingCandidate> candidates,
         string sourceImage,

@@ -88,6 +88,55 @@ public class RankLensWorkflowTests
     }
 
     [Fact]
+    public void ReconciledCandidatesWriteOnlyAfterExplicitConflictResolution()
+    {
+        Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(folder, week.FileName);
+        try
+        {
+            RankingCandidate Candidate(int rank, string name, long score) => new()
+            {
+                Category = RankingCategory.Monday,
+                Rank = rank,
+                CommanderName = name,
+                AllianceName = "Alliance",
+                Score = score,
+                IsSelected = true
+            };
+
+            var duplicate = Candidate(1, "duplicate", 10);
+            var duplicateObservation = Candidate(1, "duplicate", 10);
+            var conflict = Candidate(2, "old", 20);
+            var conflictAlternative = Candidate(2, "new", 30);
+            var reconciled = CandidateReconciler.Reconcile([
+                duplicate, duplicateObservation, conflict, conflictAlternative
+            ]);
+
+            Assert.Equal(3, reconciled.Candidates.Count);
+            Assert.False(reconciled.Candidates.Single(item => item.Rank == 2 && item.CommanderName == "old").IsSelected);
+            Assert.False(reconciled.Candidates.Single(item => item.Rank == 2 && item.CommanderName == "new").IsSelected);
+
+            var chosen = reconciled.Candidates.Single(item => item.Rank == 2 && item.CommanderName == "new");
+            CandidateReconciler.ResolveConflict(
+                reconciled.Candidates.Where(item => item.Category == RankingCategory.Monday && item.Rank == 2).ToArray(),
+                chosen,
+                ConflictResolution.KeepSelected);
+
+            new RankingWorkbookWriter().Write(path, week, reconciled.Candidates);
+            using var document = SpreadsheetDocument.Open(path, false);
+            var sheet = document.WorkbookPart!.Workbook.Sheets!.Elements<Sheet>().Single(item => item.Name == "星期一");
+            var rows = ((WorksheetPart)document.WorkbookPart.GetPartById(sheet.Id!)).Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ToList();
+            Assert.Equal("duplicate", rows[1].Elements<Cell>().ElementAt(1).InnerText);
+            Assert.Equal("new", rows[2].Elements<Cell>().ElementAt(1).InnerText);
+        }
+        finally
+        {
+            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
     public void LockedWorkbookRemainsUntouched()
     {
         Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));

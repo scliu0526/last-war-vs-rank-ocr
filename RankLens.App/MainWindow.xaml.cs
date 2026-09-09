@@ -361,7 +361,15 @@ public partial class MainWindow : Window
     {
         if (SelectedCandidate is { } candidate && candidate.IsValid)
         {
-            CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.KeepBoth);
+            var group = Candidates.Where(item => item.Category == candidate.Category && item.Rank == candidate.Rank).ToArray();
+            if (candidate.RequiresConflictResolution)
+            {
+                CandidateReconciler.ResolveConflict(group, candidate, ConflictResolution.KeepSelected);
+            }
+            else
+            {
+                CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.KeepBoth);
+            }
             CandidatesGrid.Items.Refresh();
         }
     }
@@ -370,7 +378,15 @@ public partial class MainWindow : Window
     {
         if (SelectedCandidate is { } candidate)
         {
-            CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.IgnoreNew);
+            var group = Candidates.Where(item => item.Category == candidate.Category && item.Rank == candidate.Rank).ToArray();
+            if (candidate.RequiresConflictResolution)
+            {
+                CandidateReconciler.ResolveConflict(group, candidate, ConflictResolution.IgnoreSelected);
+            }
+            else
+            {
+                CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.IgnoreNew);
+            }
             CandidatesGrid.Items.Refresh();
         }
     }
