@@ -43,6 +43,7 @@
             <TextBox x:Name="LogDaysTextBox" Width="40" Margin="6,0,4,0" VerticalContentAlignment="Center" />
             <TextBlock VerticalAlignment="Center" Text="容量 MB：" />
             <TextBox x:Name="LogSizeTextBox" Width="52" Margin="6,0,0,0" VerticalContentAlignment="Center" />
+            <Button Margin="12,0,0,0" Click="ResetSettingsClick" Content="重設設定" Padding="10,4" />
             <TextBlock x:Name="LanguageStatus" Margin="16,0,0,0" VerticalAlignment="Center" Foreground="DarkSlateGray" />
         </StackPanel>
         <Grid Grid.Row="4" Margin="0,24,0,0">

@@ -223,6 +223,25 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ResetSettingsClick(object sender, RoutedEventArgs e)
+    {
+        var defaults = new AppSettings();
+        settings.OutputFolder = defaults.OutputFolder;
+        settings.ConfidenceThreshold = defaults.ConfidenceThreshold;
+        settings.ExecutionMode = defaults.ExecutionMode;
+        settings.AdapterName = defaults.AdapterName;
+        settings.LogRetentionDays = defaults.LogRetentionDays;
+        settings.LogRetentionBytes = defaults.LogRetentionBytes;
+        OutputFolderTextBox.Text = settings.OutputFolder;
+        ConfidenceTextBox.Text = settings.ConfidenceThreshold.ToString("0.00", CultureInfo.InvariantCulture);
+        ExecutionModeComboBox.SelectedItem = settings.ExecutionMode;
+        AdapterComboBox.SelectedValue = null;
+        LogDaysTextBox.Text = settings.LogRetentionDays.ToString(CultureInfo.InvariantCulture);
+        LogSizeTextBox.Text = (settings.LogRetentionBytes / (1024 * 1024)).ToString(CultureInfo.InvariantCulture);
+        settingsStore.Save(settings);
+        BatchStatus.Text = "設定已重設為預設值。";
+    }
+
     private void ExecutionModeChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         if (AdapterComboBox is not null)
