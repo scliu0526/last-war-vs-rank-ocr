@@ -1,4 +1,5 @@
 using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
 using System.IO;
 using Windows.Graphics.Imaging;
 using Windows.Media.Ocr;
@@ -54,6 +55,18 @@ public sealed class OcrRuntime(InferenceSession detection, InferenceSession reco
     public InferenceSession Detection { get; } = detection;
     public InferenceSession Recognition { get; } = recognition;
     public IReadOnlyList<string> Dictionary { get; } = dictionary;
+
+    public IDisposableReadOnlyCollection<DisposableNamedOnnxValue> RunDetection(DenseTensor<float> imageTensor)
+    {
+        var input = Detection.InputMetadata.Keys.First();
+        return Detection.Run(new[] { NamedOnnxValue.CreateFromTensor(input, imageTensor) });
+    }
+
+    public IDisposableReadOnlyCollection<DisposableNamedOnnxValue> RunRecognition(DenseTensor<float> imageTensor)
+    {
+        var input = Recognition.InputMetadata.Keys.First();
+        return Recognition.Run(new[] { NamedOnnxValue.CreateFromTensor(input, imageTensor) });
+    }
 
     public void Dispose()
     {
