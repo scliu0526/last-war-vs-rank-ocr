@@ -23,4 +23,18 @@ public class OcrCandidateParserTests
         Assert.Equal("[TFIP]965熟成魚中心", candidate.AllianceName);
         Assert.Equal(72138569, candidate.Score);
     }
+
+    [Fact]
+    public void ParseAcceptsFullWidthScoreSeparators()
+    {
+        var result = OcrCandidateParser.Parse(
+            RankingCategory.Monday, "fixture.jpg",
+            [new OcrTextLine("2 Commander ７２，１３８，５６９", 0.99f, 0, 1)], 0.95);
+
+        Assert.Empty(result); // full-width digits remain untrusted rather than being silently rewritten
+        var normalized = OcrCandidateParser.Parse(
+            RankingCategory.Monday, "fixture.jpg",
+            [new OcrTextLine("2 Commander 72，138，569", 0.99f, 0, 1)], 0.95);
+        Assert.Equal(72138569, Assert.Single(normalized).Score);
+    }
 }

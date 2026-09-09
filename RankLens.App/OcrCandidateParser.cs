@@ -7,6 +7,12 @@ public sealed record OcrTextLine(string Text, float Confidence, int Top, int Bot
 
 public static partial class OcrCandidateParser
 {
+    private static string NormalizeScore(string value) => value
+        .Replace(",", string.Empty, StringComparison.Ordinal)
+        .Replace("，", string.Empty, StringComparison.Ordinal)
+        .Replace(" ", string.Empty, StringComparison.Ordinal)
+        .Replace("\u00A0", string.Empty, StringComparison.Ordinal)
+        .Replace("\u202F", string.Empty, StringComparison.Ordinal);
     public static RankingCategory DetectCategory(IEnumerable<string> lines)
     {
         var text = string.Join(" ", lines);
@@ -32,10 +38,10 @@ public static partial class OcrCandidateParser
             || text.Contains("星期五", StringComparison.OrdinalIgnoreCase)
             || text.Contains("星期六", StringComparison.OrdinalIgnoreCase);
     }
-    [GeneratedRegex(@"^\s*(?<rank>\d{1,3})\s+(?<name>.+?)\s+(?<score>[\d,\s]+)\s*$")]
+    [GeneratedRegex(@"^\s*(?<rank>\d{1,3})\s+(?<name>.+?)\s+(?<score>[\d,，\s\u00A0\u202F]+)\s*$")]
     private static partial Regex RankLineRegex();
 
-    [GeneratedRegex(@"^\s*(?<rank>\d{1,3})\s+(?<name>[^\t|]+?)[\t|]+(?<alliance>[^\t|]+?)[\t|]+(?<score>[\d,\s]+)\s*$")]
+    [GeneratedRegex(@"^\s*(?<rank>\d{1,3})\s+(?<name>[^\t|]+?)[\t|]+(?<alliance>[^\t|]+?)[\t|]+(?<score>[\d,，\s\u00A0\u202F]+)\s*$")]
     private static partial Regex StructuredRankLineRegex();
 
     public static IReadOnlyList<RankingCandidate> ParsePlainText(
@@ -66,7 +72,7 @@ public static partial class OcrCandidateParser
             }
 
             if (!int.TryParse(match.Groups["rank"].Value, out var rank)
-                || !long.TryParse(match.Groups["score"].Value.Replace(",", string.Empty).Replace(" ", string.Empty), NumberStyles.Integer, CultureInfo.InvariantCulture, out var score))
+                || !long.TryParse(NormalizeScore(match.Groups["score"].Value), NumberStyles.Integer, CultureInfo.InvariantCulture, out var score))
             {
                 continue;
             }
@@ -107,7 +113,7 @@ public static partial class OcrCandidateParser
             var commander = lines[commanderIndex];
             var alliance = lines[allianceIndex];
             var scoreText = hasInlineScore ? match.Groups["score"].Value : lines[scoreIndex].Text;
-            if (!long.TryParse(scoreText.Replace(",", string.Empty).Replace(" ", string.Empty), NumberStyles.Integer, CultureInfo.InvariantCulture, out var score)) continue;
+            if (!long.TryParse(NormalizeScore(scoreText), NumberStyles.Integer, CultureInfo.InvariantCulture, out var score)) continue;
             if (commander.Confidence < confidenceThreshold || alliance.Confidence < confidenceThreshold) continue;
             result.Add(new RankingCandidate
             {
