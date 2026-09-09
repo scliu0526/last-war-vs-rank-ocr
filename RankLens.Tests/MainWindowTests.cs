@@ -14,6 +14,9 @@ public class MainWindowTests
     {
         string? title = null;
         string? content = null;
+        double? zoomScale = null;
+        double? zoomMinimum = null;
+        double? zoomMaximum = null;
         Exception? failure = null;
 
         var thread = new Thread(() =>
@@ -27,6 +30,12 @@ public class MainWindowTests
                 {
                     content = string.Join(" ", root.Children.OfType<TextBlock>().Select(block => block.Text));
                 }
+                var zoomSlider = (Slider)window.FindName("SourceZoomSlider")!;
+                var zoomHost = (FrameworkElement)window.FindName("SourceCanvasHost")!;
+                zoomMinimum = zoomSlider.Minimum;
+                zoomMaximum = zoomSlider.Maximum;
+                zoomSlider.Value = 2;
+                zoomScale = ((System.Windows.Media.ScaleTransform)zoomHost.LayoutTransform).ScaleX;
                 window.Close();
                 application.Shutdown();
             }
@@ -44,6 +53,9 @@ public class MainWindowTests
         Assert.Null(failure);
         Assert.Equal("RankLens", title);
         Assert.Contains("排名截圖辨識器", content);
+        Assert.Equal(0.5, zoomMinimum);
+        Assert.Equal(3, zoomMaximum);
+        Assert.Equal(2, zoomScale);
     }
 
 }
