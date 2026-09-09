@@ -99,6 +99,43 @@ public class SettingsAndReconciliationTests
     }
 
     [Fact]
+    public void EditedInvalidFieldUnselectsCandidateUntilCorrected()
+    {
+        var candidate = new RankingCandidate
+        {
+            Category = RankingCategory.Monday, Rank = 1, CommanderName = "Commander",
+            AllianceName = "Alliance", Score = 10
+        };
+
+        CandidateSelectionPolicy.Apply([candidate]);
+        Assert.True(candidate.IsSelected);
+
+        candidate.Score = -1;
+        CandidateSelectionPolicy.Apply([candidate]);
+        Assert.False(candidate.IsSelected);
+
+        candidate.Score = 20;
+        CandidateSelectionPolicy.Apply([candidate]);
+        Assert.True(candidate.IsSelected);
+    }
+
+    [Fact]
+    public void ExplicitNoAllianceConfirmationAllowsAutomaticSelection()
+    {
+        var candidate = new RankingCandidate
+        {
+            Category = RankingCategory.Monday, Rank = 1, CommanderName = "Commander",
+            AllianceName = string.Empty, Score = 10
+        };
+
+        CandidateSelectionPolicy.Apply([candidate]);
+        Assert.False(candidate.IsSelected);
+        candidate.NoAllianceConfirmed = true;
+        CandidateSelectionPolicy.Apply([candidate]);
+        Assert.True(candidate.IsSelected);
+    }
+
+    [Fact]
     public void CategoryCorrectionAppliesToEveryCandidateFromTheSameSource()
     {
         RankingCandidate Candidate(string source, RankingCategory category) => new()
