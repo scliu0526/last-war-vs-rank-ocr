@@ -36,6 +36,18 @@ public class MainWindowTests
                 }
                 var zoomSlider = (Slider)window.FindName("SourceZoomSlider")!;
                 var zoomHost = (FrameworkElement)window.FindName("SourceCanvasHost")!;
+                var mondayPicker = (DatePicker)window.FindName("RankingMondayPicker")!;
+                var weekRange = (TextBlock)window.FindName("WeekRangeText")!;
+                mondayPicker.SelectedDate = new DateTime(2026, 9, 8);
+                if (weekRange.Text != "請選擇星期一")
+                {
+                    throw new InvalidOperationException("Non-Monday date was accepted by the WPF date picker.");
+                }
+                mondayPicker.SelectedDate = new DateTime(2026, 9, 7);
+                if (weekRange.Text != "2026-09-07 ～ 2026-09-12")
+                {
+                    throw new InvalidOperationException("Monday date did not update the ranking week range.");
+                }
                 zoomMinimum = zoomSlider.Minimum;
                 zoomMaximum = zoomSlider.Maximum;
                 zoomSlider.Value = 2;
