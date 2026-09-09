@@ -188,11 +188,12 @@ public partial class MainWindow : Window
         catch (OperationCanceledException)
         {
             BatchStatus.Text = "批次辨識已取消";
+            new LocalLog(settings).WriteStage("Warning", "Recognition", "Cancelled.");
         }
         catch (Exception exception)
         {
             BatchStatus.Text = "辨識失敗";
-            new LocalLog(settings).Write("Error", $"Recognition failed: {exception.GetType().Name}.");
+            new LocalLog(settings).WriteStage("Error", "Recognition", $"Error={exception.GetType().Name}.");
             MessageBox.Show(exception.Message, "辨識失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
@@ -360,7 +361,7 @@ public partial class MainWindow : Window
 
     private void KeepBothClick(object sender, RoutedEventArgs e)
     {
-        if (SelectedCandidate is { } candidate && candidate.IsValid)
+        if (SelectedCandidate is { } candidate)
         {
             var group = Candidates.Where(item => item.Category == candidate.Category && item.Rank == candidate.Rank).ToArray();
             if (candidate.RequiresConflictResolution)
@@ -417,13 +418,13 @@ public partial class MainWindow : Window
         }
         catch (IOException exception)
         {
-            new LocalLog(settings).Write("Warning", $"Workbook update unavailable: {exception.GetType().Name}.");
+            new LocalLog(settings).WriteStage("Warning", "WorkbookWrite", $"Error={exception.GetType().Name}.");
             MessageBox.Show("Excel 檔案可能正在使用中，未修改正式檔案。請關閉檔案後重新按下寫入。", "寫入失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         catch (InvalidDataException exception)
         {
-            new LocalLog(settings).Write("Warning", $"Workbook data invalid: {exception.GetType().Name}.");
+            new LocalLog(settings).WriteStage("Warning", "WorkbookWrite", $"Error={exception.GetType().Name}.");
             MessageBox.Show("現有 Excel 檔案格式不符合 RankLens 規格，未修改正式檔案。請先備份並移除或修正該檔案後再試。", "檔案格式錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -445,6 +446,12 @@ public partial class MainWindow : Window
 
     private void SaveSettingsFromControls()
     {
+        var oldThreshold = settings.ConfidenceThreshold;
+        var oldMode = settings.ExecutionMode;
+        var oldAdapter = settings.AdapterName;
+        var oldDays = settings.LogRetentionDays;
+        var oldBytes = settings.LogRetentionBytes;
+        var oldOutputFolder = settings.OutputFolder;
         if (double.TryParse(ConfidenceTextBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var threshold))
         {
             settings.ConfidenceThreshold = Math.Clamp(threshold, 0, 1);
@@ -465,6 +472,15 @@ public partial class MainWindow : Window
             Directory.CreateDirectory(settings.OutputFolder);
         }
         settingsStore.Save(settings);
+        if (oldThreshold != settings.ConfidenceThreshold
+            || oldMode != settings.ExecutionMode
+            || !string.Equals(oldAdapter, settings.AdapterName, StringComparison.Ordinal)
+            || oldDays != settings.LogRetentionDays
+            || oldBytes != settings.LogRetentionBytes
+            || !string.Equals(oldOutputFolder, settings.OutputFolder, StringComparison.Ordinal))
+        {
+            new LocalLog(settings).WriteStage("Info", "Settings", $"Threshold={settings.ConfidenceThreshold:0.00} Mode={settings.ExecutionMode} AdapterSelected={!string.IsNullOrWhiteSpace(settings.AdapterName)} LogDays={settings.LogRetentionDays} LogBytes={settings.LogRetentionBytes}.");
+        }
     }
 }
 
