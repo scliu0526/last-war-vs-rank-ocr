@@ -6,6 +6,13 @@ param(
 $ErrorActionPreference = "Stop"
 $repo = Resolve-Path (Join-Path $PSScriptRoot "..")
 $out = Join-Path $repo $Output
+$outFullPath = [IO.Path]::GetFullPath($out)
+$artifactRoot = [IO.Path]::GetFullPath((Join-Path $repo "artifacts"))
+if (-not $outFullPath.StartsWith($artifactRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Output must remain under the repository artifacts directory."
+}
+if (Test-Path -LiteralPath $outFullPath) { Remove-Item -LiteralPath $outFullPath -Recurse -Force }
+New-Item -ItemType Directory -Path $outFullPath -Force | Out-Null
 $manifest = Join-Path $repo "models\manifest.json"
 $manifestText = Get-Content $manifest -Raw
 if ($manifestText -match "PENDING_") { throw "models/manifest.json still contains an unresolved hash." }
