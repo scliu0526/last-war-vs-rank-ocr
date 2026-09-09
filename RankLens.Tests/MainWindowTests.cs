@@ -95,6 +95,30 @@ public class MainWindowTests
                 {
                     throw new InvalidOperationException("Conflict button did not keep the selected candidate.");
                 }
+
+                var ignoredFirst = new RankingCandidate
+                {
+                    Category = RankingCategory.Tuesday, Rank = 3, CommanderName = "First",
+                    AllianceName = "Alliance", Score = 4, SourceImage = imagePath,
+                    RequiresConflictResolution = true
+                };
+                var ignoredSecond = new RankingCandidate
+                {
+                    Category = RankingCategory.Tuesday, Rank = 3, CommanderName = "Second",
+                    AllianceName = "Alliance", Score = 5, SourceImage = imagePath,
+                    RequiresConflictResolution = true
+                };
+                window.Candidates.Add(ignoredFirst);
+                window.Candidates.Add(ignoredSecond);
+                grid.SelectedItem = ignoredSecond;
+                grid.UpdateLayout();
+                typeof(MainWindow).GetMethod("IgnoreCandidateClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [null, new RoutedEventArgs(Button.ClickEvent)]);
+                if (ignoredFirst.RequiresConflictResolution || !ignoredFirst.IsSelected
+                    || ignoredSecond.RequiresConflictResolution || ignoredSecond.IsSelected)
+                {
+                    throw new InvalidOperationException("Conflict button did not ignore the selected candidate.");
+                }
                 Directory.Delete(folder, true);
                 window.Close();
                 application.Shutdown();
