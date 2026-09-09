@@ -28,7 +28,7 @@ public partial class MainWindow : Window
         CandidatesGrid.Columns.OfType<System.Windows.Controls.DataGridComboBoxColumn>().First().ItemsSource = Enum.GetValues<RankingCategory>();
         try
         {
-            gpuAdapters = new GpuAdapterCatalog().Enumerate().Where(adapter => adapter.IsLikelyDirectMLCompatible).ToArray();
+            gpuAdapters = new GpuAdapterCatalog().Enumerate().ToArray();
         }
         catch
         {
