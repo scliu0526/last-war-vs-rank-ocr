@@ -104,12 +104,18 @@ public partial class MainWindow : Window
         BatchStatus.Text = "正在辨識…";
         try
         {
+            if (settings.ExecutionMode == RecognitionExecutionMode.DirectML)
+            {
+                throw new InvalidOperationException("DirectML 已選取，但完整 PP-OCRv5 GPU 推論管線尚未安裝；為避免靜默改用 CPU，請切換回 CPU 模式。\n模型安裝完成後再啟用 DirectML。");
+            }
             var source = new FallbackRecognitionSource(new WindowsOcrRecognitionSource(), new SidecarTextRecognitionSource());
             var processor = new BatchRecognitionProcessor();
             var progress = new Progress<int>(value => BatchProgress.Value = value);
             var results = await processor.ProcessAsync(selectedImages, source, progress, batchCancellation.Token);
+            var recognized = results.Where(item => item.Candidates is not null).SelectMany(item => item.Candidates!).ToList();
+            var reconciliation = CandidateReconciler.Reconcile(recognized);
             Candidates.Clear();
-            foreach (var result in results.Where(item => item.Candidates is not null).SelectMany(item => item.Candidates!))
+            foreach (var result in reconciliation.Candidates)
             {
                 Candidates.Add(result);
             }
@@ -117,13 +123,19 @@ public partial class MainWindow : Window
 
             var failures = results.Count(item => item.Error is not null);
             BatchStatus.Text = failures == 0
-                ? $"辨識完成，共 {Candidates.Count} 筆候選"
-                : $"辨識完成，共 {Candidates.Count} 筆候選，{failures} 張失敗";
-            new LocalLog(settings).Write("Info", $"Recognition completed: {results.Count} images, {Candidates.Count} candidates, {failures} failures.");
+                ? $"辨識完成，共 {Candidates.Count} 筆候選，{reconciliation.Conflicts.Count} 個衝突，{reconciliation.NameCollisions.Count} 個名稱碰撞"
+                : $"辨識完成，共 {Candidates.Count} 筆候選，{failures} 張失敗，{reconciliation.Conflicts.Count} 個衝突";
+            new LocalLog(settings).Write("Info", $"Recognition completed: {results.Count} images, {Candidates.Count} candidates, {failures} failures, {reconciliation.Conflicts.Count} conflicts, {reconciliation.NameCollisions.Count} collisions.");
         }
         catch (OperationCanceledException)
         {
             BatchStatus.Text = "批次辨識已取消";
+        }
+        catch (Exception exception)
+        {
+            BatchStatus.Text = "辨識失敗";
+            new LocalLog(settings).Write("Error", $"Recognition failed: {exception.GetType().Name}.");
+            MessageBox.Show(exception.Message, "辨識失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {

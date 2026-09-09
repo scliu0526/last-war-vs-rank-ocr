@@ -58,4 +58,32 @@ public class RankLensWorkflowTests
             }
         }
     }
+
+    [Fact]
+    public void UpdateChangesOnlySelectedRowsAndRotatesBackup()
+    {
+        Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(folder, week.FileName);
+        try
+        {
+            var writer = new RankingWorkbookWriter();
+            writer.Write(path, week, [new RankingCandidate { Category = RankingCategory.Monday, Rank = 1, CommanderName = "old", AllianceName = "A", Score = 1, IsSelected = true }]);
+            writer.Update(path, week, [
+                new RankingCandidate { Category = RankingCategory.Monday, Rank = 1, CommanderName = "new", AllianceName = "B", Score = 2, IsSelected = true },
+                new RankingCandidate { Category = RankingCategory.Monday, Rank = 2, CommanderName = "ignored", AllianceName = "C", Score = 3, IsSelected = false }
+            ]);
+
+            Assert.True(File.Exists(path + ".bak"));
+            using var document = SpreadsheetDocument.Open(path, false);
+            var sheet = document.WorkbookPart!.Workbook.Sheets!.Elements<Sheet>().Single(item => item.Name == "星期一");
+            var rows = ((WorksheetPart)document.WorkbookPart.GetPartById(sheet.Id!)).Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ToList();
+            Assert.Equal("new", rows[1].Elements<Cell>().ElementAt(1).InnerText);
+            Assert.Equal(string.Empty, rows[2].Elements<Cell>().ElementAt(1).InnerText);
+        }
+        finally
+        {
+            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        }
+    }
 }

@@ -73,4 +73,33 @@ public static partial class OcrCandidateParser
 
         return result;
     }
+
+    public static IReadOnlyList<RankingCandidate> ParseRows(
+        RankingCategory category,
+        string sourceImage,
+        IReadOnlyList<OcrTextLine> lines,
+        double confidenceThreshold = 0.95)
+    {
+        var result = new List<RankingCandidate>();
+        for (var index = 0; index < lines.Count; index++)
+        {
+            var match = Regex.Match(lines[index].Text, @"^\s*(?<rank>\d{1,3})\s+(?<score>[\d,\s]+)\s*$");
+            if (!match.Success || lines[index].Confidence < confidenceThreshold) continue;
+            if (!int.TryParse(match.Groups["rank"].Value, out var rank)
+                || !long.TryParse(match.Groups["score"].Value.Replace(",", string.Empty).Replace(" ", string.Empty), NumberStyles.Integer, CultureInfo.InvariantCulture, out var score)
+                || index + 2 >= lines.Count) continue;
+
+            var commander = lines[index + 1];
+            var alliance = lines[index + 2];
+            if (commander.Confidence < confidenceThreshold || alliance.Confidence < confidenceThreshold) continue;
+            result.Add(new RankingCandidate
+            {
+                Category = category, Rank = rank,
+                CommanderName = commander.Text.Trim(), AllianceName = alliance.Text.Trim(), Score = score,
+                IsSelected = true, SourceImage = sourceImage
+            });
+            index += 2;
+        }
+        return result;
+    }
 }
