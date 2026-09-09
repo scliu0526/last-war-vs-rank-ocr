@@ -46,7 +46,11 @@ dotnet publish (Join-Path $repo "RankLens.App\RankLens.App.csproj") `
     --configuration $Configuration --runtime win-x64 --self-contained true `
     --output $out
 
-Copy-Item (Join-Path $repo "models") (Join-Path $out "models") -Recurse -Force
+$publishedModels = Join-Path $out "models"
+New-Item -ItemType Directory -Path $publishedModels -Force | Out-Null
+foreach ($modelFile in @($manifestJson.detectionModel, $manifestJson.recognitionModel, $manifestJson.characterDictionary, "manifest.json", "README.md")) {
+    Copy-Item (Join-Path $repo "models\$modelFile") (Join-Path $publishedModels $modelFile) -Force
+}
 foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md")) {
     Copy-Item (Join-Path $repo $document) (Join-Path $out $document) -Force
 }
