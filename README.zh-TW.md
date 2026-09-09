@@ -9,3 +9,5 @@ RankLens 是非官方、離線執行的 Windows 桌面應用程式，用於校�
 目前已具備 .NET 10 WPF 基線、圖片選取／批次取消、候選列勾選與編輯、Open XML 活頁簿建立／安全更新、影像前處理、文字偵測、裁切辨識、CTC 解碼與排名解析的本機 ONNX OCR 路徑、設定與隱私安全 Log。正式 OCR 仍需要合法授權且已固定雜湊的 PP-OCRv5 模型包；DirectML GPU 與正式 ZIP 發佈會在模型來源與雜湊完成後啟用。在此之前可用同名 `.txt` 側錄預覽流程。
 
 英文主要文件：[README.md](README.md)。
+
+發佈腳本會產生 `RankLens-win-x64.zip.sha256`，解壓前請使用 `Get-FileHash -Algorithm SHA256 RankLens-win-x64.zip` 比對雜湊。ZIP 未經付費憑證簽章，Windows SmartScreen 可能顯示「未知的發行者」警告；本專案不宣稱程式已簽署。
