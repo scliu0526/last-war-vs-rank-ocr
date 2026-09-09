@@ -16,10 +16,21 @@
             <TextBlock VerticalAlignment="Center" Text="排名週星期一：" />
             <DatePicker x:Name="RankingMondayPicker" Margin="8,0,12,0" SelectedDateFormat="Short" />
             <Button Click="SelectImagesClick" Content="選擇截圖" Padding="12,6" />
+            <Button Margin="8,0,0,0" Click="SelectFolderClick" Content="選擇資料夾" Padding="12,6" />
             <Button Margin="8,0,0,0" Click="WriteWorkbookClick" Content="寫入 Excel" Padding="12,6" />
         </StackPanel>
-        <Border Grid.Row="3" Margin="0,24,0,0" Padding="12" BorderBrush="LightGray" BorderThickness="1" CornerRadius="6">
-            <DataGrid x:Name="CandidatesGrid" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" IsReadOnly="False">
+        <Grid Grid.Row="3" Margin="0,24,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                <ProgressBar x:Name="BatchProgress" Width="220" Height="18" Minimum="0" Maximum="100" />
+                <TextBlock x:Name="BatchStatus" Margin="12,0,0,0" VerticalAlignment="Center" Text="尚未選取圖片" />
+                <Button x:Name="CancelBatchButton" Margin="12,0,0,0" Click="CancelBatchClick" Content="取消" IsEnabled="False" Padding="12,3" />
+            </StackPanel>
+            <Border Grid.Row="1" Margin="0,12,0,0" Padding="12" BorderBrush="LightGray" BorderThickness="1" CornerRadius="6">
+                <DataGrid x:Name="CandidatesGrid" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" IsReadOnly="False">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="確認" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="分類" Binding="{Binding Category}" IsReadOnly="True" />
@@ -28,7 +39,8 @@
                     <DataGridTextColumn Header="同盟名稱" Binding="{Binding AllianceName, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="積分" Binding="{Binding Score, UpdateSourceTrigger=PropertyChanged}" />
                 </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+                </DataGrid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

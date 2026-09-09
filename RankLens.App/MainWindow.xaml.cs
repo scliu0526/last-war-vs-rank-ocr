@@ -9,6 +9,7 @@ public partial class MainWindow : Window
 {
     public ObservableCollection<RankingCandidate> Candidates { get; } = [];
     private string[] selectedImages = [];
+    private CancellationTokenSource? batchCancellation;
 
     public MainWindow()
     {
@@ -26,9 +27,46 @@ public partial class MainWindow : Window
         };
         if (dialog.ShowDialog(this) == true)
         {
-            selectedImages = dialog.FileNames;
-            Title = $"RankLens — 已選取 {selectedImages.Length} 張截圖";
+            SetSelectedImages(dialog.FileNames, null);
         }
+    }
+
+    private void SelectFolderClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog { Title = "選擇排名截圖資料夾" };
+        if (dialog.ShowDialog(this) == true)
+        {
+            try
+            {
+                var result = ImageInputDiscovery.Discover([], dialog.FolderName);
+                SetSelectedImages(result.Accepted, dialog.FolderName);
+                if (result.Rejected.Count > 0)
+                {
+                    BatchStatus.Text = $"已選取 {result.Accepted.Count} 張，略過 {result.Rejected.Count} 個不支援檔案";
+                }
+            }
+            catch (InvalidOperationException exception)
+            {
+                MessageBox.Show(exception.Message, "圖片數量超過上限", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+    }
+
+    private void SetSelectedImages(IEnumerable<string> paths, string? folder)
+    {
+        selectedImages = paths.ToArray();
+        BatchProgress.Value = 0;
+        BatchStatus.Text = folder is null
+            ? $"已選取 {selectedImages.Length} 張截圖"
+            : $"已選取資料夾內 {selectedImages.Length} 張截圖";
+        Title = $"RankLens — 已選取 {selectedImages.Length} 張截圖";
+    }
+
+    private void CancelBatchClick(object sender, RoutedEventArgs e)
+    {
+        batchCancellation?.Cancel();
+        CancelBatchButton.IsEnabled = false;
+        BatchStatus.Text = "正在取消批次處理…";
     }
 
     private void WriteWorkbookClick(object sender, RoutedEventArgs e)
