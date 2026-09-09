@@ -22,9 +22,25 @@ try {
     $manifestEntry = $zip.GetEntry("models/manifest.json")
     $reader = [System.IO.StreamReader]::new($manifestEntry.Open())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-    if ($manifest.license -match "PENDING|must be verified|placeholder") { throw "Release manifest contains an unresolved license notice." }
+    if ([string]::IsNullOrWhiteSpace($manifest.license) -or $manifest.license -match "PENDING|must be verified|placeholder") { throw "Release manifest contains an unresolved license notice." }
     foreach ($hash in @($manifest.detectionSha256, $manifest.recognitionSha256, $manifest.characterDictionarySha256)) {
         if ($hash -notmatch '^[0-9A-Fa-f]{64}$') { throw "Release manifest contains a non-canonical model SHA-256 value." }
+    }
+    $modelEntries = @(
+        @{ Name = $manifest.detectionModel; Hash = $manifest.detectionSha256 },
+        @{ Name = $manifest.recognitionModel; Hash = $manifest.recognitionSha256 },
+        @{ Name = $manifest.characterDictionary; Hash = $manifest.characterDictionarySha256 }
+    )
+    foreach ($model in $modelEntries) {
+        $entry = $zip.GetEntry("models/$($model.Name)")
+        if ($null -eq $entry) { throw "Release archive is missing manifest model $($model.Name)" }
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        $stream = $entry.Open()
+        try { $actualModelHash = ([System.BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-', '') }
+        finally { $stream.Dispose(); $sha.Dispose() }
+        if (-not [string]::Equals($actualModelHash, $model.Hash, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Model SHA-256 mismatch in release archive: $($model.Name)"
+        }
     }
 }
 finally { $zip.Dispose() }
