@@ -1,5 +1,9 @@
 using Microsoft.ML.OnnxRuntime;
 using System.IO;
+using Windows.Graphics.Imaging;
+using Windows.Media.Ocr;
+using Windows.Storage;
+using Windows.Storage.Streams;
 
 namespace RankLens.App;
 
@@ -36,5 +40,28 @@ public sealed class OcrRuntimeFactory
         }
 
         return new InferenceSession(modelPath, options);
+    }
+}
+
+/// <summary>Uses the Windows offline OCR engine when the matching language packs are installed.</summary>
+public sealed class WindowsOcrRecognitionSource : IRecognitionSource
+{
+    public async Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
+        IReadOnlyList<string> imagePaths,
+        CancellationToken cancellationToken = default)
+    {
+        if (imagePaths.Count != 1) throw new ArgumentException("一次只能辨識一張圖片。", nameof(imagePaths));
+        cancellationToken.ThrowIfCancellationRequested();
+        var file = await StorageFile.GetFileFromPathAsync(imagePaths[0]);
+        using var stream = await RandomAccessStreamReference.CreateFromFile(file).OpenReadAsync();
+        var decoder = await BitmapDecoder.CreateAsync(stream);
+        using var bitmap = await decoder.GetSoftwareBitmapAsync();
+        var engine = OcrEngine.TryCreateFromUserProfileLanguages()
+            ?? throw new InvalidOperationException("Windows 尚未安裝可用的 OCR 語言套件。");
+        var result = await engine.RecognizeAsync(bitmap);
+        cancellationToken.ThrowIfCancellationRequested();
+        var lines = result.Lines.Select(line => new OcrTextLine(line.Text, 1, 0, 0)).ToArray();
+        var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
+        return OcrCandidateParser.Parse(category, imagePaths[0], lines, 0);
     }
 }

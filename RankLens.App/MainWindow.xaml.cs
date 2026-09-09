@@ -102,7 +102,7 @@ public partial class MainWindow : Window
         BatchStatus.Text = "正在辨識…";
         try
         {
-            var source = new SidecarTextRecognitionSource();
+            var source = new FallbackRecognitionSource(new WindowsOcrRecognitionSource(), new SidecarTextRecognitionSource());
             var processor = new BatchRecognitionProcessor();
             var progress = new Progress<int>(value => BatchProgress.Value = value);
             var results = await processor.ProcessAsync(selectedImages, source, progress, batchCancellation.Token);
@@ -203,5 +203,21 @@ internal sealed class SidecarTextRecognitionSource : IRecognitionSource
         var lines = File.ReadLines(sidecar).ToArray();
         var candidates = OcrCandidateParser.ParsePlainText(OcrCandidateParser.DetectCategory(lines), image, lines);
         return Task.FromResult(candidates);
+    }
+}
+
+internal sealed class FallbackRecognitionSource(params IRecognitionSource[] sources) : IRecognitionSource
+{
+    public async Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(IReadOnlyList<string> imagePaths, CancellationToken cancellationToken = default)
+    {
+        Exception? last = null;
+        foreach (var source in sources)
+        {
+            try { return await source.RecognizeAsync(imagePaths, cancellationToken); }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception exception) { last = exception; }
+        }
+
+        throw new InvalidOperationException("沒有可用的離線 OCR 來源。", last);
     }
 }
