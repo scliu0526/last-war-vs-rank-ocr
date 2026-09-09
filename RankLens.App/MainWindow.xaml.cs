@@ -52,6 +52,7 @@ public partial class MainWindow : Window
         OutputFolderTextBox.Text = settings.OutputFolder;
         LogDaysTextBox.Text = settings.LogRetentionDays.ToString(CultureInfo.InvariantCulture);
         LogSizeTextBox.Text = (settings.LogRetentionBytes / (1024 * 1024)).ToString(CultureInfo.InvariantCulture);
+        UpdateWeekRange();
     }
 
     private void SelectImagesClick(object sender, RoutedEventArgs e)
@@ -64,6 +65,20 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog(this) == true)
         {
             SetSelectedImages(dialog.FileNames, null);
+        }
+    }
+
+    private void RankingMondayChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) => UpdateWeekRange();
+
+    private void UpdateWeekRange()
+    {
+        if (RankingMondayPicker?.SelectedDate is DateTime date && RankingWeek.TryCreate(DateOnly.FromDateTime(date), out var week))
+        {
+            WeekRangeText.Text = $"{week.Monday:yyyy-MM-dd} ～ {week.Monday.AddDays(5):yyyy-MM-dd}";
+        }
+        else if (WeekRangeText is not null)
+        {
+            WeekRangeText.Text = "請選擇星期一";
         }
     }
 

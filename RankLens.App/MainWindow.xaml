@@ -15,7 +15,8 @@
         <TextBlock Grid.Row="1" Margin="0,8,0,0" Foreground="DarkSlateGray" Text="排名截圖辨識器" />
         <StackPanel Grid.Row="2" Margin="0,24,0,0" Orientation="Horizontal">
             <TextBlock VerticalAlignment="Center" Text="排名週星期一：" />
-            <DatePicker x:Name="RankingMondayPicker" Margin="8,0,12,0" SelectedDateFormat="Short" />
+            <DatePicker x:Name="RankingMondayPicker" Margin="8,0,4,0" SelectedDateFormat="Short" SelectedDateChanged="RankingMondayChanged" />
+            <TextBlock x:Name="WeekRangeText" Margin="4,0,12,0" VerticalAlignment="Center" Foreground="DarkSlateGray" />
             <Button Click="SelectImagesClick" Content="選擇截圖" Padding="12,6" />
             <Button Margin="8,0,0,0" Click="SelectFolderClick" Content="選擇資料夾" Padding="12,6" />
             <Button Margin="8,0,0,0" Click="RecognizeClick" Content="開始辨識" Padding="12,6" />
