@@ -300,7 +300,15 @@ public partial class MainWindow : Window
 
     private void ShowSource(SourceObservation source)
     {
-        if (!File.Exists(source.ImagePath)) return;
+        if (!File.Exists(source.ImagePath))
+        {
+            SourceImageLabel.Text = Path.GetFileName(source.ImagePath);
+            SourceGeometryLabel.Text = "來源圖片不存在";
+            SourceImagePreview.Source = null;
+            SourceHighlight.Width = 0;
+            SourceHighlight.Height = 0;
+            return;
+        }
         SourceImageLabel.Text = Path.GetFileName(source.ImagePath);
         SourceGeometryLabel.Text = source.Bottom > source.Top
             ? $"OCR 列範圍：Y={source.Top}～{source.Bottom}"

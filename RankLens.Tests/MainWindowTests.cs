@@ -50,6 +50,10 @@ public class MainWindowTests
                 var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
                 encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
                 using (var stream = File.Create(imagePath)) encoder.Save(stream);
+                var secondImagePath = Path.Combine(folder, "second.png");
+                var secondEncoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                secondEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                using (var stream = File.Create(secondImagePath)) secondEncoder.Save(stream);
                 var candidate = new RankingCandidate
                 {
                     Category = RankingCategory.Monday,
@@ -71,6 +75,39 @@ public class MainWindowTests
                 highlightTop = Canvas.GetTop(highlight);
                 highlightHeight = highlight.Height;
                 sourceLabel = ((TextBlock)window.FindName("SourceImageLabel")!).Text;
+
+                var switchCandidate = new RankingCandidate
+                {
+                    Category = RankingCategory.Monday, Rank = 3, CommanderName = "Switch",
+                    AllianceName = "Alliance", Score = 7, SourceImage = imagePath
+                };
+                switchCandidate.Sources.Add(new SourceObservation(imagePath, 5, 15));
+                switchCandidate.Sources.Add(new SourceObservation(secondImagePath, 25, 35));
+                window.Candidates.Add(switchCandidate);
+                grid.SelectedItem = switchCandidate;
+                grid.UpdateLayout();
+                var sourceList = (ListBox)window.FindName("SourceList")!;
+                sourceList.SelectedIndex = 1;
+                sourceLabel = ((TextBlock)window.FindName("SourceImageLabel")!).Text;
+                var switchedGeometry = ((TextBlock)window.FindName("SourceGeometryLabel")!).Text;
+                if (sourceLabel != "second.png" || !switchedGeometry.Contains("Y=25～35", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Preview did not switch to the selected retained source.");
+                }
+
+                var missingCandidate = new RankingCandidate
+                {
+                    Category = RankingCategory.Monday, Rank = 5, CommanderName = "Missing",
+                    AllianceName = "Alliance", Score = 8, SourceImage = Path.Combine(folder, "gone.png")
+                };
+                window.Candidates.Add(missingCandidate);
+                grid.SelectedItem = missingCandidate;
+                grid.UpdateLayout();
+                var missingStatus = ((TextBlock)window.FindName("SourceGeometryLabel")!).Text;
+                if (missingStatus != "來源圖片不存在")
+                {
+                    throw new InvalidOperationException("Preview did not clear when all sources were missing.");
+                }
 
                 var fallbackCandidate = new RankingCandidate
                 {
