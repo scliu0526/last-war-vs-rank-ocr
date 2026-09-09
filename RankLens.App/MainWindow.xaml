@@ -72,7 +72,14 @@
                         <TextBlock x:Name="SourceImageLabel" Margin="0,4,0,8" TextWrapping="Wrap" Foreground="Gray" />
                         <TextBlock x:Name="SourceGeometryLabel" Margin="0,0,0,8" Foreground="Gray" />
                         <Border BorderBrush="LightGray" BorderThickness="1" Height="220">
-                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"><Image x:Name="SourceImagePreview" Stretch="Uniform" /></ScrollViewer>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                <Grid>
+                                    <Image x:Name="SourceImagePreview" Stretch="None" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                                    <Canvas x:Name="SourceOverlay" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <Rectangle x:Name="SourceHighlight" Fill="#55FFD700" Stroke="Goldenrod" StrokeThickness="2" />
+                                    </Canvas>
+                                </Grid>
+                            </ScrollViewer>
                         </Border>
                     </StackPanel>
                 </Grid>

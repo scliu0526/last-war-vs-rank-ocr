@@ -4,6 +4,7 @@ using System.IO;
 using System.Globalization;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
 namespace RankLens.App;
@@ -209,6 +210,8 @@ public partial class MainWindow : Window
             SourceImageLabel.Text = string.Empty;
             SourceGeometryLabel.Text = string.Empty;
             SourceImagePreview.Source = null;
+            SourceHighlight.Width = 0;
+            SourceHighlight.Height = 0;
             return;
         }
 
@@ -222,6 +225,22 @@ public partial class MainWindow : Window
         image.UriSource = new Uri(candidate.SourceImage, UriKind.Absolute);
         image.EndInit();
         SourceImagePreview.Source = image;
+        SourceImagePreview.Width = image.PixelWidth;
+        SourceImagePreview.Height = image.PixelHeight;
+        SourceOverlay.Width = image.PixelWidth;
+        SourceOverlay.Height = image.PixelHeight;
+        if (candidate.SourceBottom > candidate.SourceTop)
+        {
+            Canvas.SetLeft(SourceHighlight, 0);
+            Canvas.SetTop(SourceHighlight, candidate.SourceTop);
+            SourceHighlight.Width = image.PixelWidth;
+            SourceHighlight.Height = candidate.SourceBottom - candidate.SourceTop;
+        }
+        else
+        {
+            SourceHighlight.Width = 0;
+            SourceHighlight.Height = 0;
+        }
     }
 
     private RankingCandidate? SelectedCandidate => CandidatesGrid.SelectedItem as RankingCandidate;
