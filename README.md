@@ -10,6 +10,10 @@ The project is under active implementation. The current baseline includes the .N
 
 See [README.zh-TW.md](README.zh-TW.md) for Traditional Chinese documentation.
 
+## Model and release preparation
+
+The repository does not redistribute OCR binaries. After independently verifying a permitted model source and license, run `scripts/install-ocr-models.ps1` with the source URLs and SHA-256 values. The script writes only verified files to `models/`; `scripts/publish-win-x64.ps1` refuses unresolved hashes or mismatched files before creating the self-contained ZIP.
+
 ## License
 
 Source code is released under the MIT License. See [LICENSE](LICENSE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
