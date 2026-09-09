@@ -44,8 +44,8 @@
                 <TextBlock x:Name="BatchStatus" Margin="12,0,0,0" VerticalAlignment="Center" Text="尚未選取圖片" />
                 <Button x:Name="CancelBatchButton" Margin="12,0,0,0" Click="CancelBatchClick" Content="取消" IsEnabled="False" Padding="12,3" />
                 <Button Margin="8,0,0,0" Click="SelectCandidateClick" Content="選取候選" Padding="10,3" />
-                <Button Margin="4,0,0,0" Click="MoveRankClick" Content="移動名次" Padding="10,3" />
-                <Button Margin="4,0,0,0" Click="KeepBothClick" Content="保留兩筆" Padding="10,3" />
+                <Button Margin="4,0,0,0" Click="MoveRankClick" Content="套用新名次" Padding="10,3" />
+                <Button Margin="4,0,0,0" Click="KeepBothClick" Content="保留此筆" Padding="10,3" />
                 <Button Margin="4,0,0,0" Click="IgnoreCandidateClick" Content="忽略新資料" Padding="10,3" />
             </StackPanel>
             <Border Grid.Row="1" Margin="0,12,0,0" Padding="12" BorderBrush="LightGray" BorderThickness="1" CornerRadius="6">
