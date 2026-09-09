@@ -19,8 +19,21 @@ try {
     $entryNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in $zip.Entries) { [void]$entryNames.Add($entry.FullName.Replace('\', '/')) }
     foreach ($name in $required) { if (-not $entryNames.Contains($name)) { throw "Release archive is missing $name" } }
-    $noticeEntries = @($entryNames | Where-Object { $_.StartsWith("licenses/", [StringComparison]::OrdinalIgnoreCase) -and $_ -notmatch '/$' })
-    if ($noticeEntries.Count -eq 0) { throw "Release archive is missing bundled dependency notices." }
+    foreach ($package in @(
+        @{ Id = "documentformat.openxml"; Version = "3.3.0" },
+        @{ Id = "documentformat.openxml.framework"; Version = "3.3.0" },
+        @{ Id = "microsoft.ai.directml"; Version = "1.15.4" },
+        @{ Id = "microsoft.ml.onnxruntime"; Version = "1.24.1" },
+        @{ Id = "microsoft.ml.onnxruntime.managed"; Version = "1.24.1" },
+        @{ Id = "microsoft.ml.onnxruntime.directml"; Version = "1.24.1" },
+        @{ Id = "system.management"; Version = "9.0.9" },
+        @{ Id = "system.numerics.tensors"; Version = "9.0.0" }
+    )) {
+        $prefix = "licenses/$($package.Id)-$($package.Version)/"
+        if (@($entryNames | Where-Object { $_.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) -and $_ -notmatch '/$' }).Count -eq 0) {
+            throw "Release archive is missing dependency notices for $($package.Id) $($package.Version)."
+        }
+    }
     $manifestEntry = $zip.GetEntry("models/manifest.json")
     $reader = [System.IO.StreamReader]::new($manifestEntry.Open())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }

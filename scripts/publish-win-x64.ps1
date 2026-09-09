@@ -43,7 +43,18 @@ Copy-Item (Join-Path $repo "models") (Join-Path $out "models") -Recurse -Force
 foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md")) {
     Copy-Item (Join-Path $repo $document) (Join-Path $out $document) -Force
 }
-$globalPackages = if ([string]::IsNullOrWhiteSpace($env:NUGET_PACKAGES)) { Join-Path $env:USERPROFILE ".nuget\packages" } else { $env:NUGET_PACKAGES }
+$globalPackages = $env:NUGET_PACKAGES
+if ([string]::IsNullOrWhiteSpace($globalPackages)) {
+    $configPath = Join-Path $repo "NuGet.Config"
+    if (Test-Path -LiteralPath $configPath) {
+        $config = [xml](Get-Content -LiteralPath $configPath -Raw)
+        $configuredFolder = $config.configuration.config.add | Where-Object { $_.key -eq "globalPackagesFolder" } | Select-Object -First 1 -ExpandProperty value
+        if (-not [string]::IsNullOrWhiteSpace($configuredFolder)) {
+            $globalPackages = if ([IO.Path]::IsPathRooted($configuredFolder)) { $configuredFolder } else { Join-Path $repo $configuredFolder }
+        }
+    }
+}
+if ([string]::IsNullOrWhiteSpace($globalPackages)) { $globalPackages = Join-Path $env:USERPROFILE ".nuget\packages" }
 $noticeRoot = Join-Path $out "licenses"
 New-Item -ItemType Directory -Path $noticeRoot -Force | Out-Null
 foreach ($package in @(
@@ -61,9 +72,16 @@ foreach ($package in @(
     $targetDir = Join-Path $noticeRoot "$($package.Id)-$($package.Version)"
     New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
     $noticeFiles = Get-ChildItem -LiteralPath $packageDir -File | Where-Object { $_.Name -match '^(LICENSE|ThirdPartyNotices|THIRD-PARTY-NOTICES)' }
-    if ($noticeFiles.Count -eq 0) { $noticeFiles = Get-ChildItem -LiteralPath $packageDir -File -Filter "README.md" }
-    if ($noticeFiles.Count -eq 0) { throw "No package notice file found: $($package.Id) $($package.Version)" }
-    Copy-Item -LiteralPath $noticeFiles.FullName -Destination $targetDir -Force
+    if ($noticeFiles.Count -gt 0) {
+        Copy-Item -LiteralPath $noticeFiles.FullName -Destination $targetDir -Force
+    }
+    else {
+        $repositoryNoticeDir = Join-Path $repo "licenses\$($package.Id)-$($package.Version)"
+        if (-not (Test-Path -LiteralPath $repositoryNoticeDir)) { throw "No package notice file found: $($package.Id) $($package.Version)" }
+        $repositoryNoticeFiles = Get-ChildItem -LiteralPath $repositoryNoticeDir -File
+        if ($repositoryNoticeFiles.Count -eq 0) { throw "Repository notice directory is empty: $($package.Id) $($package.Version)" }
+        Copy-Item -LiteralPath $repositoryNoticeFiles.FullName -Destination $targetDir -Force
+    }
 }
 $archive = Join-Path (Split-Path $out -Parent) "RankLens-win-x64.zip"
 if (Test-Path $archive) { Remove-Item -LiteralPath $archive -Force }
