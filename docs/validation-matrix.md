@@ -4,14 +4,14 @@ This matrix records implementation evidence separately from environment-dependen
 
 | Issue | Implementation evidence | Reproducible local evidence | Remaining acceptance boundary |
 | --- | --- | --- | --- |
-| #4 | Workbook creation, selective update, backup rotation, lock-safe replacement | `dotnet test RankLens.slnx --configuration Release` | None known for the implemented scope; issue is closed |
-| #5 | JPG/JPEG/PNG selection, folder discovery, 100-image limit, cancellation and progress | Same test command; batch tests | None known for the implemented scope; issue is closed |
-| #6 | ONNX Runtime CPU path, model manifest/hash/licence gates, parser and sidecar fallback | Unit tests and fake-runtime OCR integration tests | Real pinned PP-OCRv5 binaries, legal provenance, and private screenshot ground truth |
-| #7 | Category detection, portrait validation, multilingual parsing, row bounds, source geometry | Parser, validator, and synthetic image tests | Six real private samples plus representative Japanese/Thai samples |
-| #8 | Candidate grid, selection policy, conflict controls, category correction, source switching and zoom | WPF smoke/source-preview tests plus domain policy tests | Full DataGrid binding and close-dialog interaction coverage |
-| #9 | Duplicate merge, source retention, conflict and name-collision resolution | Domain and workflow tests, including WPF keep/ignore conflict actions | Full real-image/WPF acceptance session |
-| #10 | CPU default, DirectML adapter enumeration, unavailable-adapter explanations and no silent fallback | Adapter/catalog unit coverage and startup logic | RTX 4050 DirectML OCR and CPU/GPU output parity |
-| #11 | Persisted settings, safe CPU fallback, privacy-safe structured logs and retention limits | Settings and log retention tests | None known for the implemented local scope |
+| #4 | Workbook creation, selective update, backup rotation, lock-safe replacement | `dotnet test RankLens.slnx --configuration Release` | No known local code gap; real Excel lock/reopen session remains unperformed; issue is closed |
+| #5 | JPG/JPEG/PNG selection, folder discovery, 100-image limit, cancellation and progress | Same test command; batch tests | No known local code gap; real 100-image operator run remains unperformed; issue is closed |
+| #6 | ONNX Runtime CPU pipeline scaffolding, model manifest/hash/licence gates, parser and sidecar fallback | Unit tests and fake-runtime OCR integration tests | Real pinned PP-OCRv5 binaries, legal provenance, CPU OCR, and private screenshot ground truth |
+| #7 | Category/parser scaffolding, portrait validation, row bounds and source geometry | Parser, validator, and synthetic image tests | Real six-sample classification, complete-row filtering, rotation/crop/拼接/landscape rejection, and Japanese/Thai OCR samples |
+| #8 | Candidate grid, selection policy, conflict controls, category correction, source switching and zoom | WPF smoke/source-preview/date/conflict tests plus domain policy tests | Direct WPF DataGrid edit/check-box/category/no-alliance binding, write guard, and close-dialog Yes/No interaction coverage |
+| #9 | Duplicate merge, source retention, conflict and name-collision domain resolution | Domain/workflow tests, including WPF keep/ignore conflict actions | Real WPF MoveRank/KeepBoth/Ignore name-collision interaction and full real-image session |
+| #10 | CPU default, DirectML adapter enumeration, unavailable-adapter explanations and no silent fallback | Adapter/catalog unit coverage and startup logic | WMI enumeration is heuristic; RTX 4050 DirectML OCR, Intel status, and CPU/GPU output parity remain unverified |
+| #11 | Persisted settings, safe CPU fallback, privacy-safe structured logs and retention limits | Settings and log retention tests | No known local code gap; full WPF settings interaction and real-machine log review remain unperformed |
 | #12 | MIT/licence notices, bilingual docs, model provenance gates, ZIP verifier, image exclusion and Windows CI | `pwsh ./scripts/test-release-security.ps1` | Verified model-containing self-contained ZIP and clean-machine offline launch |
 | #13 | Workflow, batch, workbook, security-gate and CI automation | Release build, 46 tests, security script, Windows CI definition | Real Windows 11 CPU/GPU/model run; Windows 10, Japanese and Thai remain unverified |
 
