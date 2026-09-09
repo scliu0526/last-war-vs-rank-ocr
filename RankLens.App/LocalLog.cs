@@ -7,10 +7,10 @@ public sealed class LocalLog
     private readonly string folder;
     private readonly AppSettings settings;
 
-    public LocalLog(AppSettings settings)
+    public LocalLog(AppSettings settings, string? folderOverride = null)
     {
         this.settings = settings;
-        folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RankLens", "Logs");
+        folder = folderOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RankLens", "Logs");
         try
         {
             Directory.CreateDirectory(folder);
