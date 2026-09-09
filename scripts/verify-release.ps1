@@ -19,7 +19,7 @@ try {
     $entryNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in $zip.Entries) { [void]$entryNames.Add($entry.FullName.Replace('\', '/')) }
     $forbiddenEntries = @($entryNames | Where-Object {
-        $_ -match '(^|/)screenshot(/|$)' -or $_ -match '\.(jpg|jpeg|png)$'
+        $_ -match '(^|/)screenshot(/|$)' -or $_ -match '\.(jpg|jpeg|png|gif|bmp|webp|tif|tiff|ico)$'
     })
     if ($forbiddenEntries.Count -gt 0) {
         throw "Release archive contains private screenshot/image content: $($forbiddenEntries[0])"
