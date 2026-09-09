@@ -27,8 +27,10 @@ public class MainWindowTests
         {
             try
             {
-                var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-                var window = new MainWindow();
+                var application = new RankLensApplication { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                typeof(RankLensApplication).GetMethod("OnStartup", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(application, [null]);
+                var window = (MainWindow)application.MainWindow!;
                 title = window.Title;
                 if (window.Content is Grid root)
                 {
