@@ -41,7 +41,10 @@ public sealed class OcrModelStore
         {
             throw new InvalidDataException("OCR manifest 檔名無效。");
         }
-        if (string.IsNullOrWhiteSpace(expectedHash) || expectedHash.StartsWith("PENDING_", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(expectedHash)
+            || expectedHash.StartsWith("PENDING_", StringComparison.OrdinalIgnoreCase)
+            || expectedHash.Length != 64
+            || expectedHash.Any(character => !Uri.IsHexDigit(character)))
         {
             throw new InvalidOperationException("OCR 模型尚未設定固定 SHA-256，拒絕載入未鎖定的模型。");
         }

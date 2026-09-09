@@ -18,4 +18,11 @@ public class OcrModelStoreTests
         var manifest = new OcrModelManifest("..\\det.onnx", "rec.onnx", "dict.txt", "MIT", "abc", "def");
         Assert.Throws<InvalidDataException>(() => new OcrModelStore().Validate(manifest, Path.GetTempPath()));
     }
+
+    [Fact]
+    public void MalformedHashIsRejected()
+    {
+        var manifest = new OcrModelManifest("det.onnx", "rec.onnx", "dict.txt", "MIT", "1234", new string('a', 64));
+        Assert.Throws<InvalidOperationException>(() => new OcrModelStore().Validate(manifest, Path.GetTempPath()));
+    }
 }
