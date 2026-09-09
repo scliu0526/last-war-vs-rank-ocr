@@ -39,4 +39,16 @@ public class OcrCandidateParserTests
             [new OcrTextLine("2 Commander 72，138，569", 0.99f, 0, 1)], 0.95);
         Assert.Equal(72138569, Assert.Single(normalized).Score);
     }
+
+    [Theory]
+    [InlineData("Monday", RankingCategory.Monday)]
+    [InlineData("月曜日", RankingCategory.Monday)]
+    [InlineData("화요일", RankingCategory.Tuesday)]
+    [InlineData("วันพุธ", RankingCategory.Wednesday)]
+    [InlineData("Weekly Ranking", RankingCategory.Weekly)]
+    public void DetectCategoryRecognizesSupportedLanguageLabels(string label, RankingCategory expected)
+    {
+        Assert.Equal(expected, OcrCandidateParser.DetectCategory([label]));
+        Assert.True(OcrCandidateParser.IsCategoryResolved([label]));
+    }
 }

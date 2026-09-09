@@ -16,13 +16,13 @@ public static partial class OcrCandidateParser
     public static RankingCategory DetectCategory(IEnumerable<string> lines)
     {
         var text = string.Join(" ", lines);
-        if (text.Contains("星期一", StringComparison.OrdinalIgnoreCase)) return RankingCategory.Monday;
-        if (text.Contains("星期二", StringComparison.OrdinalIgnoreCase)) return RankingCategory.Tuesday;
-        if (text.Contains("星期三", StringComparison.OrdinalIgnoreCase)) return RankingCategory.Wednesday;
-        if (text.Contains("星期四", StringComparison.OrdinalIgnoreCase)) return RankingCategory.Thursday;
-        if (text.Contains("星期五", StringComparison.OrdinalIgnoreCase)) return RankingCategory.Friday;
-        if (text.Contains("星期六", StringComparison.OrdinalIgnoreCase)) return RankingCategory.Saturday;
-        return text.Contains("本週排名", StringComparison.OrdinalIgnoreCase)
+        if (ContainsAny(text, "星期一", "Monday", "月曜日", "월요일", "วันจันทร์")) return RankingCategory.Monday;
+        if (ContainsAny(text, "星期二", "Tuesday", "火曜日", "화요일", "วันอังคาร")) return RankingCategory.Tuesday;
+        if (ContainsAny(text, "星期三", "Wednesday", "水曜日", "수요일", "วันพุธ")) return RankingCategory.Wednesday;
+        if (ContainsAny(text, "星期四", "Thursday", "木曜日", "목요일", "วันพฤหัสบดี")) return RankingCategory.Thursday;
+        if (ContainsAny(text, "星期五", "Friday", "金曜日", "금요일", "วันศุกร์")) return RankingCategory.Friday;
+        if (ContainsAny(text, "星期六", "Saturday", "土曜日", "토요일", "วันเสาร์")) return RankingCategory.Saturday;
+        return ContainsAny(text, "本週排名", "Weekly Ranking", "週ランキング", "주간 순위", "อันดับประจำสัปดาห์")
             ? RankingCategory.Weekly
             : RankingCategory.PendingClassification;
     }
@@ -30,14 +30,13 @@ public static partial class OcrCandidateParser
     public static bool IsCategoryResolved(IEnumerable<string> lines)
     {
         var text = string.Join(" ", lines);
-        return text.Contains("本週排名", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("星期一", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("星期二", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("星期三", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("星期四", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("星期五", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("星期六", StringComparison.OrdinalIgnoreCase);
+        return ContainsAny(text, "本週排名", "Weekly Ranking", "週ランキング", "주간 순위", "อันดับประจำสัปดาห์",
+            "星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+            "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일",
+            "วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์");
     }
+
+    private static bool ContainsAny(string text, params string[] values) => values.Any(value => text.Contains(value, StringComparison.OrdinalIgnoreCase));
     [GeneratedRegex(@"^\s*(?<rank>\d{1,3})\s+(?<name>.+?)\s+(?<score>[\d,，\s\u00A0\u202F]+)\s*$")]
     private static partial Regex RankLineRegex();
 
