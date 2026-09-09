@@ -22,7 +22,7 @@ public sealed record OcrRuntimeConfiguration(
 
 public sealed class OcrRuntimeFactory
 {
-    public InferenceSession Create(OcrRuntimeConfiguration configuration, OcrModelManifest manifest)
+    public OcrRuntime Create(OcrRuntimeConfiguration configuration, OcrModelManifest manifest)
     {
         new OcrModelStore().Validate(manifest, configuration.ModelDirectory);
         var modelPath = Path.Combine(configuration.ModelDirectory, manifest.DetectionModel);
@@ -33,13 +33,32 @@ public sealed class OcrRuntimeFactory
             throw new FileNotFoundException("找不到完整 OCR 模型組，請先完成模型安裝。", modelPath);
         }
 
-        var options = new SessionOptions();
-        if (configuration.Mode == RecognitionExecutionMode.DirectML)
-        {
-            options.AppendExecutionProvider_DML(configuration.AdapterId);
-        }
+        var detectionOptions = CreateSessionOptions(configuration);
+        var recognitionOptions = CreateSessionOptions(configuration);
+        return new OcrRuntime(
+            new InferenceSession(modelPath, detectionOptions),
+            new InferenceSession(recognitionPath, recognitionOptions),
+            File.ReadAllLines(dictionaryPath));
+    }
 
-        return new InferenceSession(modelPath, options);
+    private static SessionOptions CreateSessionOptions(OcrRuntimeConfiguration configuration)
+    {
+        var options = new SessionOptions();
+        if (configuration.Mode == RecognitionExecutionMode.DirectML) options.AppendExecutionProvider_DML(configuration.AdapterId);
+        return options;
+    }
+}
+
+public sealed class OcrRuntime(InferenceSession detection, InferenceSession recognition, IReadOnlyList<string> dictionary) : IDisposable
+{
+    public InferenceSession Detection { get; } = detection;
+    public InferenceSession Recognition { get; } = recognition;
+    public IReadOnlyList<string> Dictionary { get; } = dictionary;
+
+    public void Dispose()
+    {
+        Detection.Dispose();
+        Recognition.Dispose();
     }
 }
 
