@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace RankLens.App;
 
@@ -35,6 +36,24 @@ public sealed class OnnxOcrRecognitionSource(
             var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
             var confidence = Math.Min(box.Confidence, decoded.Confidence);
             if (!string.IsNullOrWhiteSpace(decoded.Text)) lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)confidence, (int)box.Top, (int)box.Bottom, (int)box.Left));
+        }
+
+        // The game uses a high-contrast outlined glyph for the rank column that
+        // the detector can miss. Re-read only the left rank column for rows
+        // that already have detected content; no rank is inferred if OCR fails.
+        foreach (var row in boxes.Where(box => box.Left > image.OriginalWidth * 0.2 && box.Top > image.OriginalHeight * 0.2)
+            .GroupBy(box => (int)Math.Round(box.Top / 70d)).Select(group => group.ToArray()))
+        {
+            var top = Math.Max(0, row.Min(box => box.Top) - 8);
+            var bottom = Math.Min(image.OriginalHeight, row.Max(box => box.Bottom) + 8);
+            var rankBox = new DetectionBox(0, top, Math.Min(image.OriginalWidth * 0.2f, 180), bottom, 1);
+            var crop = OcrImagePreprocessor.CropAndResize(image, rankBox);
+            var outputs = await Task.Run(() => runtime.RunRecognition(crop), cancellationToken);
+            var recognition = outputs.FirstOrDefault(IsSequenceTensor)
+                ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
+            var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
+            if (Regex.IsMatch(decoded.Text.Trim(), @"^\d{1,3}$"))
+                lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)decoded.Confidence, (int)top, (int)bottom, 0));
         }
 
         var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
