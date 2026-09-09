@@ -142,8 +142,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (RankingMondayPicker.SelectedDate is not DateTime selectedDate
-            || !RankingWeek.TryCreate(DateOnly.FromDateTime(selectedDate), out var week))
+        if (!ReviewUiPolicy.TryCreateWeek(RankingMondayPicker.SelectedDate, out var week))
         {
             MessageBox.Show("請選擇星期一作為排名週起始日。", "日期錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -415,8 +414,7 @@ public partial class MainWindow : Window
 
     private void WriteWorkbookClick(object sender, RoutedEventArgs e)
     {
-        if (RankingMondayPicker.SelectedDate is not DateTime selectedDate
-            || !RankingWeek.TryCreate(DateOnly.FromDateTime(selectedDate), out var week))
+        if (!ReviewUiPolicy.TryCreateWeek(RankingMondayPicker.SelectedDate, out var week))
         {
             MessageBox.Show("請選擇星期一作為排名週起始日。", "日期錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -460,7 +458,7 @@ public partial class MainWindow : Window
 
     private void WindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        if (!hasUnsavedReview || Candidates.Count == 0) return;
+        if (!ReviewUiPolicy.ShouldPromptOnClose(hasUnsavedReview, Candidates.Count)) return;
         var result = MessageBox.Show("目前有尚未寫入 Excel 的候選資料，確定要關閉嗎？", "尚未儲存", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (result == MessageBoxResult.No) e.Cancel = true;
     }

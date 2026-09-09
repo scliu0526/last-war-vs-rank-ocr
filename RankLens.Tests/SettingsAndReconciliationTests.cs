@@ -136,6 +136,23 @@ public class SettingsAndReconciliationTests
     }
 
     [Fact]
+    public void ReviewUiPolicyAcceptsOnlyMondayDates()
+    {
+        Assert.True(ReviewUiPolicy.TryCreateWeek(new DateTime(2026, 9, 7), out var week));
+        Assert.Equal(new DateOnly(2026, 9, 7), week.Monday);
+        Assert.False(ReviewUiPolicy.TryCreateWeek(new DateTime(2026, 9, 8), out _));
+        Assert.False(ReviewUiPolicy.TryCreateWeek(null, out _));
+    }
+
+    [Fact]
+    public void ReviewUiPolicyPromptsOnlyWhenUnsavedCandidatesExist()
+    {
+        Assert.True(ReviewUiPolicy.ShouldPromptOnClose(true, 1));
+        Assert.False(ReviewUiPolicy.ShouldPromptOnClose(false, 1));
+        Assert.False(ReviewUiPolicy.ShouldPromptOnClose(true, 0));
+    }
+
+    [Fact]
     public void CategoryCorrectionAppliesToEveryCandidateFromTheSameSource()
     {
         RankingCandidate Candidate(string source, RankingCategory category) => new()

@@ -98,6 +98,23 @@ public static class CandidateSelectionPolicy
     }
 }
 
+public static class ReviewUiPolicy
+{
+    public static bool TryCreateWeek(DateTime? selectedDate, out RankingWeek week)
+    {
+        if (selectedDate is DateTime date)
+        {
+            return RankingWeek.TryCreate(DateOnly.FromDateTime(date), out week);
+        }
+
+        week = default;
+        return false;
+    }
+
+    public static bool ShouldPromptOnClose(bool hasUnsavedReview, int candidateCount) =>
+        hasUnsavedReview && candidateCount > 0;
+}
+
 public interface IRecognitionSource
 {
     Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
