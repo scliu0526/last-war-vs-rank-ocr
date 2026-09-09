@@ -53,6 +53,21 @@ public class SettingsAndReconciliationTests
     }
 
     [Fact]
+    public void ReconciliationKeepsAllSourceObservationsWhenMergingDuplicates()
+    {
+        RankingCandidate Candidate(string source) => new()
+        {
+            Category = RankingCategory.Monday, Rank = 1, CommanderName = "same",
+            AllianceName = "A", Score = 10, SourceImage = source, IsSelected = true
+        };
+        var merged = Assert.Single(CandidateReconciler.Reconcile([Candidate("a.png"), Candidate("b.png")]).Candidates);
+
+        Assert.Equal(2, merged.Sources.Count);
+        Assert.Contains(merged.Sources, source => source.ImagePath == "a.png");
+        Assert.Contains(merged.Sources, source => source.ImagePath == "b.png");
+    }
+
+    [Fact]
     public void BlankAllianceRequiresExplicitNoAllianceConfirmation()
     {
         var candidate = new RankingCandidate

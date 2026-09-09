@@ -53,6 +53,13 @@ public sealed class RankingCandidate
     public double AllianceConfidence { get; init; } = 1;
     public double ScoreConfidence { get; init; } = 1;
     public double OverallConfidence => Math.Min(Math.Min(RankConfidence, CommanderConfidence), Math.Min(AllianceConfidence, ScoreConfidence));
+    public List<SourceObservation> Sources { get; } = [];
+
+    public void AddSource(RankingCandidate candidate)
+    {
+        var source = new SourceObservation(candidate.SourceImage, candidate.SourceTop, candidate.SourceBottom);
+        if (!Sources.Contains(source)) Sources.Add(source);
+    }
 
     public bool IsValid => Rank is >= 1 and <= 200
         && !string.IsNullOrWhiteSpace(CommanderName)
@@ -60,6 +67,8 @@ public sealed class RankingCandidate
         && ClassificationResolved
         && (!string.IsNullOrWhiteSpace(AllianceName) || NoAllianceConfirmed);
 }
+
+public sealed record SourceObservation(string ImagePath, int Top, int Bottom);
 
 public static class CandidateSelectionPolicy
 {

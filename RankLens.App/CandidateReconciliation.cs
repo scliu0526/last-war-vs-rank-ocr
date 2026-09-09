@@ -50,7 +50,9 @@ public static class CandidateReconciler
             var distinct = group.GroupBy(candidate => (candidate.CommanderName, candidate.AllianceName, candidate.Score, candidate.NoAllianceConfirmed)).ToList();
             if (distinct.Count == 1)
             {
-                merged.Add(group.First());
+                var representative = group.First();
+                foreach (var observation in group) representative.AddSource(observation);
+                merged.Add(representative);
             }
             else
             {
@@ -58,6 +60,7 @@ public static class CandidateReconciler
                 conflicts.Add(conflict);
                 foreach (var candidate in conflict)
                 {
+                    candidate.AddSource(candidate);
                     candidate.IsSelected = false;
                     merged.Add(candidate);
                 }

@@ -233,31 +233,46 @@ public partial class MainWindow : Window
             SourceImageLabel.Text = string.Empty;
             SourceGeometryLabel.Text = string.Empty;
             SourceImagePreview.Source = null;
+            SourceList.ItemsSource = null;
             SourceHighlight.Width = 0;
             SourceHighlight.Height = 0;
             return;
         }
 
-        SourceImageLabel.Text = Path.GetFileName(candidate.SourceImage);
-        SourceGeometryLabel.Text = candidate.SourceBottom > candidate.SourceTop
-            ? $"OCR 列範圍：Y={candidate.SourceTop}～{candidate.SourceBottom}"
+        if (candidate.Sources.Count == 0) candidate.AddSource(candidate);
+        SourceList.ItemsSource = candidate.Sources;
+        SourceList.SelectedIndex = 0;
+        ShowSource(candidate.Sources[0]);
+    }
+
+    private void SourceSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (SourceList.SelectedItem is SourceObservation source) ShowSource(source);
+    }
+
+    private void ShowSource(SourceObservation source)
+    {
+        if (!File.Exists(source.ImagePath)) return;
+        SourceImageLabel.Text = Path.GetFileName(source.ImagePath);
+        SourceGeometryLabel.Text = source.Bottom > source.Top
+            ? $"OCR 列範圍：Y={source.Top}～{source.Bottom}"
             : "OCR 列座標不可用";
         var image = new BitmapImage();
         image.BeginInit();
         image.CacheOption = BitmapCacheOption.OnLoad;
-        image.UriSource = new Uri(candidate.SourceImage, UriKind.Absolute);
+        image.UriSource = new Uri(source.ImagePath, UriKind.Absolute);
         image.EndInit();
         SourceImagePreview.Source = image;
         SourceImagePreview.Width = image.PixelWidth;
         SourceImagePreview.Height = image.PixelHeight;
         SourceOverlay.Width = image.PixelWidth;
         SourceOverlay.Height = image.PixelHeight;
-        if (candidate.SourceBottom > candidate.SourceTop)
+        if (source.Bottom > source.Top)
         {
             Canvas.SetLeft(SourceHighlight, 0);
-            Canvas.SetTop(SourceHighlight, candidate.SourceTop);
+            Canvas.SetTop(SourceHighlight, source.Top);
             SourceHighlight.Width = image.PixelWidth;
-            SourceHighlight.Height = candidate.SourceBottom - candidate.SourceTop;
+            SourceHighlight.Height = source.Bottom - source.Top;
         }
         else
         {
