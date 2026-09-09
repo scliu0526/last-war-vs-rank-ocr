@@ -60,6 +60,50 @@ public class RankLensWorkflowTests
     }
 
     [Fact]
+    public async Task ProvidedMondaySampleTextFlowsThroughParserIntoWorkbook()
+    {
+        Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
+        var parsed = OcrCandidateParser.ParseRows(
+            RankingCategory.Monday,
+            "screenshot/288376_0.jpg",
+            [
+                new OcrTextLine("1", .99f, 0, 10),
+                new OcrTextLine("GBgogogo", .99f, 11, 20),
+                new OcrTextLine("[TFIP]965熟成魚中心", .99f, 21, 30),
+                new OcrTextLine("72,138,569", .99f, 31, 40)
+            ]);
+        var candidate = Assert.Single(parsed);
+        candidate.IsSelected = true;
+
+        var workflow = new RankLensWorkflow(new RankingWorkbookWriter());
+        var session = await workflow.RecognizeAsync(
+            week,
+            ["screenshot/288376_0.jpg"],
+            new FixedRecognitionSource([candidate]));
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(folder, week.FileName);
+
+        try
+        {
+            var summary = workflow.WriteConfirmed(folder, session);
+            Assert.Equal(1, summary.Updated);
+            Assert.True(File.Exists(path));
+
+            using var document = SpreadsheetDocument.Open(path, false);
+            var monday = document.WorkbookPart!.Workbook.Sheets!.Elements<Sheet>()
+                .Single(sheet => sheet.Name == "星期一");
+            var worksheet = (WorksheetPart)document.WorkbookPart.GetPartById(monday.Id!);
+            var row = worksheet.Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ElementAt(1);
+            Assert.Equal(["1", "GBgogogo", "[TFIP]965熟成魚中心", "72138569"],
+                row.Elements<Cell>().Select(cell => cell.InnerText).ToArray());
+        }
+        finally
+        {
+            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
     public void UpdateChangesOnlySelectedRowsAndRotatesBackup()
     {
         Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
