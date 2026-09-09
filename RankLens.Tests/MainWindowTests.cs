@@ -71,6 +71,30 @@ public class MainWindowTests
                 highlightTop = Canvas.GetTop(highlight);
                 highlightHeight = highlight.Height;
                 sourceLabel = ((TextBlock)window.FindName("SourceImageLabel")!).Text;
+
+                var conflictFirst = new RankingCandidate
+                {
+                    Category = RankingCategory.Monday, Rank = 2, CommanderName = "First",
+                    AllianceName = "Alliance", Score = 2, SourceImage = imagePath,
+                    RequiresConflictResolution = true
+                };
+                var conflictSecond = new RankingCandidate
+                {
+                    Category = RankingCategory.Monday, Rank = 2, CommanderName = "Second",
+                    AllianceName = "Alliance", Score = 3, SourceImage = imagePath,
+                    RequiresConflictResolution = true
+                };
+                window.Candidates.Add(conflictFirst);
+                window.Candidates.Add(conflictSecond);
+                grid.SelectedItem = conflictSecond;
+                grid.UpdateLayout();
+                typeof(MainWindow).GetMethod("KeepBothClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [null, new RoutedEventArgs(Button.ClickEvent)]);
+                if (conflictFirst.RequiresConflictResolution || conflictFirst.IsSelected
+                    || conflictSecond.RequiresConflictResolution || !conflictSecond.IsSelected)
+                {
+                    throw new InvalidOperationException("Conflict button did not keep the selected candidate.");
+                }
                 Directory.Delete(folder, true);
                 window.Close();
                 application.Shutdown();
