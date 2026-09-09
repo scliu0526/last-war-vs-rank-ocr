@@ -15,6 +15,12 @@ public sealed class OcrModelStore
 
     public void Validate(OcrModelManifest manifest, string modelDirectory)
     {
+        if (string.IsNullOrWhiteSpace(manifest.License)
+            || manifest.License.Contains("must be verified", StringComparison.OrdinalIgnoreCase)
+            || manifest.License.Contains("placeholder", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("OCR 模型授權聲明尚未完成核對，拒絕載入。");
+        }
         ValidateFile(manifest.DetectionModel, manifest.DetectionSha256, modelDirectory);
         ValidateFile(manifest.RecognitionModel, manifest.RecognitionSha256, modelDirectory);
         if (!File.Exists(Path.Combine(modelDirectory, manifest.CharacterDictionary)))
