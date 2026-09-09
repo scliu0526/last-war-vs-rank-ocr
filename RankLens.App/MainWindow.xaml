@@ -43,6 +43,10 @@
                 <ProgressBar x:Name="BatchProgress" Width="220" Height="18" Minimum="0" Maximum="100" />
                 <TextBlock x:Name="BatchStatus" Margin="12,0,0,0" VerticalAlignment="Center" Text="尚未選取圖片" />
                 <Button x:Name="CancelBatchButton" Margin="12,0,0,0" Click="CancelBatchClick" Content="取消" IsEnabled="False" Padding="12,3" />
+                <Button Margin="8,0,0,0" Click="SelectCandidateClick" Content="選取候選" Padding="10,3" />
+                <Button Margin="4,0,0,0" Click="MoveRankClick" Content="移動名次" Padding="10,3" />
+                <Button Margin="4,0,0,0" Click="KeepBothClick" Content="保留兩筆" Padding="10,3" />
+                <Button Margin="4,0,0,0" Click="IgnoreCandidateClick" Content="忽略新資料" Padding="10,3" />
             </StackPanel>
             <Border Grid.Row="1" Margin="0,12,0,0" Padding="12" BorderBrush="LightGray" BorderThickness="1" CornerRadius="6">
                 <Grid>
@@ -51,7 +55,7 @@
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="確認" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="分類" Binding="{Binding Category}" IsReadOnly="True" />
-                    <DataGridTextColumn Header="排名" Binding="{Binding Rank}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="排名" Binding="{Binding Rank, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="指揮官名稱" Binding="{Binding CommanderName, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="同盟名稱" Binding="{Binding AllianceName, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridCheckBoxColumn Header="確認無同盟" Binding="{Binding NoAllianceConfirmed, UpdateSourceTrigger=PropertyChanged}" />

@@ -38,7 +38,7 @@ public readonly record struct RankingWeek(DateOnly Monday)
 public sealed class RankingCandidate
 {
     public required RankingCategory Category { get; init; }
-    public required int Rank { get; init; }
+    public required int Rank { get; set; }
     public required string CommanderName { get; set; }
     public required string AllianceName { get; set; }
     public required long Score { get; set; }

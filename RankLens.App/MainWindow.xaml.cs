@@ -174,6 +174,49 @@ public partial class MainWindow : Window
         SourceImagePreview.Source = image;
     }
 
+    private RankingCandidate? SelectedCandidate => CandidatesGrid.SelectedItem as RankingCandidate;
+
+    private void SelectCandidateClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedCandidate is { } candidate)
+        {
+            candidate.IsSelected = candidate.IsValid;
+            CandidatesGrid.Items.Refresh();
+        }
+    }
+
+    private void MoveRankClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedCandidate is not { } candidate) return;
+        if (candidate.Rank is < 1 or > 200)
+        {
+            MessageBox.Show("名次必須介於 1 到 200。", "名次錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
+            candidate.IsSelected = false;
+            CandidatesGrid.Items.Refresh();
+            return;
+        }
+        candidate.IsSelected = candidate.IsValid;
+        CandidatesGrid.Items.Refresh();
+    }
+
+    private void KeepBothClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedCandidate is { } candidate && candidate.IsValid)
+        {
+            candidate.IsSelected = true;
+            CandidatesGrid.Items.Refresh();
+        }
+    }
+
+    private void IgnoreCandidateClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedCandidate is { } candidate)
+        {
+            candidate.IsSelected = false;
+            CandidatesGrid.Items.Refresh();
+        }
+    }
+
     private void WriteWorkbookClick(object sender, RoutedEventArgs e)
     {
         if (RankingMondayPicker.SelectedDate is not DateTime selectedDate
