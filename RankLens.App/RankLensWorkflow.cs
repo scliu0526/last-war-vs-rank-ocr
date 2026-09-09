@@ -17,6 +17,13 @@ public sealed class RankLensWorkflow(RankingWorkbookWriter workbookWriter)
     public void WriteConfirmed(string outputFolder, ReviewSession session)
     {
         var path = Path.Combine(outputFolder, session.Week.FileName);
-        workbookWriter.Write(path, session.Week, session.Candidates);
+        if (File.Exists(path))
+        {
+            workbookWriter.Update(path, session.Week, session.Candidates);
+        }
+        else
+        {
+            workbookWriter.Write(path, session.Week, session.Candidates);
+        }
     }
 }
