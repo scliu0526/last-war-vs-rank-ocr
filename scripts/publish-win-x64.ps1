@@ -13,6 +13,9 @@ $manifestJson = $manifestText | ConvertFrom-Json
 if (([string]::IsNullOrWhiteSpace($manifestJson.license)) -or ($manifestJson.license -match "PENDING|must be verified|placeholder")) {
     throw "models/manifest.json still contains an unresolved license notice."
 }
+foreach ($metadata in @($manifestJson.modelVersion, $manifestJson.sourceRevision, $manifestJson.detectionSourceUrl, $manifestJson.recognitionSourceUrl, $manifestJson.dictionarySourceUrl)) {
+    if ([string]::IsNullOrWhiteSpace($metadata) -or $metadata -match "PENDING|placeholder") { throw "models/manifest.json is missing verified model provenance metadata." }
+}
 foreach ($entry in @(
     @{ Name = $manifestJson.detectionModel; Hash = $manifestJson.detectionSha256 },
     @{ Name = $manifestJson.recognitionModel; Hash = $manifestJson.recognitionSha256 },

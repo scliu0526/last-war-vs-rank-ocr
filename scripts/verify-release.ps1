@@ -23,6 +23,9 @@ try {
     $reader = [System.IO.StreamReader]::new($manifestEntry.Open())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
     if ([string]::IsNullOrWhiteSpace($manifest.license) -or $manifest.license -match "PENDING|must be verified|placeholder") { throw "Release manifest contains an unresolved license notice." }
+    foreach ($metadata in @($manifest.modelVersion, $manifest.sourceRevision, $manifest.detectionSourceUrl, $manifest.recognitionSourceUrl, $manifest.dictionarySourceUrl)) {
+        if ([string]::IsNullOrWhiteSpace($metadata) -or $metadata -match "PENDING|placeholder") { throw "Release manifest is missing verified model provenance metadata." }
+    }
     foreach ($hash in @($manifest.detectionSha256, $manifest.recognitionSha256, $manifest.characterDictionarySha256)) {
         if ($hash -notmatch '^[0-9A-Fa-f]{64}$') { throw "Release manifest contains a non-canonical model SHA-256 value." }
     }

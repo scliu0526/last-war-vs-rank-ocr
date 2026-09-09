@@ -5,12 +5,17 @@ param(
     [Parameter(Mandatory = $true)][string]$RecognitionSha256,
     [Parameter(Mandatory = $true)][string]$DictionaryUrl,
     [Parameter(Mandatory = $true)][string]$DictionarySha256,
+    [Parameter(Mandatory = $true)][string]$ModelVersion,
+    [Parameter(Mandatory = $true)][string]$SourceRevision,
     [Parameter(Mandatory = $true)][string]$LicenseNotice
 )
 
 $ErrorActionPreference = "Stop"
 if ([string]::IsNullOrWhiteSpace($LicenseNotice) -or $LicenseNotice -match "PENDING|must be verified|placeholder") {
     throw "LicenseNotice must be a verified, non-placeholder license statement."
+}
+if (([string]::IsNullOrWhiteSpace($ModelVersion)) -or ($ModelVersion -match "PENDING|placeholder") -or ([string]::IsNullOrWhiteSpace($SourceRevision)) -or ($SourceRevision -match "PENDING|placeholder")) {
+    throw "ModelVersion and SourceRevision must be provided and non-placeholder."
 }
 $modelDir = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")) "models"
 New-Item -ItemType Directory -Path $modelDir -Force | Out-Null
@@ -45,6 +50,11 @@ $manifest = [ordered]@{
     recognitionModel = "PP-OCRv5_rec.onnx"
     characterDictionary = "ppocrv5_dict.txt"
     license = $LicenseNotice
+    modelVersion = $ModelVersion
+    sourceRevision = $SourceRevision
+    detectionSourceUrl = $DetectionUrl
+    recognitionSourceUrl = $RecognitionUrl
+    dictionarySourceUrl = $DictionaryUrl
     detectionSha256 = $DetectionSha256.ToUpperInvariant()
     recognitionSha256 = $RecognitionSha256.ToUpperInvariant()
     characterDictionarySha256 = $DictionarySha256.ToUpperInvariant()

@@ -3,6 +3,11 @@
   "recognitionModel": "PP-OCRv5_rec.onnx",
   "characterDictionary": "ppocrv5_dict.txt",
   "license": "PaddleOCR license and model-specific notice must be verified before release",
+  "modelVersion": "PENDING_MODEL_VERSION",
+  "sourceRevision": "PENDING_MODEL_SOURCE_REVISION",
+  "detectionSourceUrl": "PENDING_SOURCE_URL",
+  "recognitionSourceUrl": "PENDING_SOURCE_URL",
+  "dictionarySourceUrl": "PENDING_SOURCE_URL",
   "detectionSha256": "PENDING_PINNED_MODEL_HASH",
   "recognitionSha256": "PENDING_PINNED_MODEL_HASH",
   "characterDictionarySha256": "PENDING_PINNED_MODEL_HASH"
