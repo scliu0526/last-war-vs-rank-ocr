@@ -16,10 +16,17 @@ $modelDir = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")) "models"
 New-Item -ItemType Directory -Path $modelDir -Force | Out-Null
 
 function Download-Verified([string]$url, [string]$name, [string]$hash) {
+    $uri = [Uri]$url
+    if ($uri.Scheme -ne "https") { throw "Model downloads must use HTTPS: $name" }
+    if ($hash -notmatch '^[0-9A-Fa-f]{64}$') { throw "SHA-256 must contain exactly 64 hexadecimal characters: $name" }
     $target = Join-Path $modelDir $name
     Invoke-WebRequest -Uri $url -OutFile $target
     $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $target).Hash
     if ($actual -ne $hash) { throw "SHA-256 mismatch for $name" }
+}
+
+foreach ($hash in @($DetectionSha256, $RecognitionSha256, $DictionarySha256)) {
+    if ($hash -notmatch '^[0-9A-Fa-f]{64}$') { throw "All model SHA-256 values must contain exactly 64 hexadecimal characters." }
 }
 
 Download-Verified $DetectionUrl "PP-OCRv5_det.onnx" $DetectionSha256

@@ -10,11 +10,17 @@ $manifest = Join-Path $repo "models\manifest.json"
 $manifestText = Get-Content $manifest -Raw
 if ($manifestText -match "PENDING_") { throw "models/manifest.json still contains an unresolved hash." }
 $manifestJson = $manifestText | ConvertFrom-Json
+if (([string]::IsNullOrWhiteSpace($manifestJson.license)) -or ($manifestJson.license -match "PENDING|must be verified|placeholder")) {
+    throw "models/manifest.json still contains an unresolved license notice."
+}
 foreach ($entry in @(
     @{ Name = $manifestJson.detectionModel; Hash = $manifestJson.detectionSha256 },
     @{ Name = $manifestJson.recognitionModel; Hash = $manifestJson.recognitionSha256 },
     @{ Name = $manifestJson.characterDictionary; Hash = $manifestJson.characterDictionarySha256 }
 )) {
+    if ([string]::IsNullOrWhiteSpace($entry.Hash) -or $entry.Hash -notmatch '^[0-9A-Fa-f]{64}$') {
+        throw "Manifest hash is not a canonical SHA-256 value: $($entry.Name)"
+    }
     $source = Join-Path (Join-Path $repo "models") $entry.Name
     if (-not (Test-Path -LiteralPath $source)) { throw "Missing model file: $($entry.Name)" }
     if ($entry.Hash) {
