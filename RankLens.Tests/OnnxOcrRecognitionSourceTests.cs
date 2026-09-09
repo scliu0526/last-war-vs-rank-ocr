@@ -13,9 +13,9 @@ public class OnnxOcrRecognitionSourceTests
         var path = Path.Combine(Path.GetTempPath(), $"ranklens-{Guid.NewGuid():N}.png");
         try
         {
-            var pixels = new byte[16 * 16 * 4];
+            var pixels = new byte[320 * 480 * 4];
             for (var i = 0; i < pixels.Length; i += 4) { pixels[i] = 255; pixels[i + 1] = 255; pixels[i + 2] = 255; pixels[i + 3] = 255; }
-            var bitmap = BitmapSource.Create(16, 16, 96, 96, PixelFormats.Bgra32, null, pixels, 16 * 4);
+            var bitmap = BitmapSource.Create(320, 480, 96, 96, PixelFormats.Bgra32, null, pixels, 320 * 4);
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
             using (var stream = File.Create(path)) encoder.Save(stream);
 

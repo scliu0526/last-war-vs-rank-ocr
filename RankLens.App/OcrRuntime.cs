@@ -110,6 +110,7 @@ public sealed class WindowsOcrRecognitionSource : IRecognitionSource
     {
         if (imagePaths.Count != 1) throw new ArgumentException("一次只能辨識一張圖片。", nameof(imagePaths));
         cancellationToken.ThrowIfCancellationRequested();
+        ScreenshotInputValidator.ValidatePortrait(imagePaths[0]);
         var file = await StorageFile.GetFileFromPathAsync(imagePaths[0]);
         using var stream = await RandomAccessStreamReference.CreateFromFile(file).OpenReadAsync();
         var decoder = await BitmapDecoder.CreateAsync(stream);

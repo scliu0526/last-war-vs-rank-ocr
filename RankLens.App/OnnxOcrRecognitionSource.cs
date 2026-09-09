@@ -15,6 +15,7 @@ public sealed class OnnxOcrRecognitionSource(
         if (imagePaths.Count != 1) throw new ArgumentException("一次只能辨識一張圖片。", nameof(imagePaths));
         cancellationToken.ThrowIfCancellationRequested();
         var path = imagePaths[0];
+        ScreenshotInputValidator.ValidatePortrait(path);
         var image = await OcrImagePreprocessor.LoadAsync(path, cancellationToken: cancellationToken);
         var detectionOutputs = await Task.Run(() => runtime.RunDetection(image.Tensor), cancellationToken);
         var detection = detectionOutputs.FirstOrDefault(IsProbabilityMap)
