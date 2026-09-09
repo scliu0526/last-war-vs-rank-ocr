@@ -50,7 +50,7 @@ public class OnnxOcrRecognitionSourceTests
             previous = character;
         }
         var values = new float[symbols.Count * dictionary.Count];
-        for (var index = 0; index < symbols.Count; index++) values[index * dictionary.Count + symbols[index]] = 1;
+        for (var index = 0; index < symbols.Count; index++) values[index * dictionary.Count + symbols[index]] = 10;
         return new OcrTensorOutput("rec", [1, symbols.Count, dictionary.Count], values);
     }
 
