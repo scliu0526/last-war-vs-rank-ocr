@@ -21,9 +21,11 @@ public sealed class OcrRuntimeFactory
     public InferenceSession Create(OcrRuntimeConfiguration configuration, OcrModelManifest manifest)
     {
         var modelPath = Path.Combine(configuration.ModelDirectory, manifest.DetectionModel);
-        if (!File.Exists(modelPath))
+        var recognitionPath = Path.Combine(configuration.ModelDirectory, manifest.RecognitionModel);
+        var dictionaryPath = Path.Combine(configuration.ModelDirectory, manifest.CharacterDictionary);
+        if (!File.Exists(modelPath) || !File.Exists(recognitionPath) || !File.Exists(dictionaryPath))
         {
-            throw new FileNotFoundException("找不到 OCR 偵測模型，請先完成模型安裝。", modelPath);
+            throw new FileNotFoundException("找不到完整 OCR 模型組，請先完成模型安裝。", modelPath);
         }
 
         var options = new SessionOptions();
