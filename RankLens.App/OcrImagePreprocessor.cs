@@ -9,8 +9,11 @@ public sealed record OcrImageTensor(DenseTensor<float> Tensor, int OriginalWidth
 
 public static class OcrImagePreprocessor
 {
-    private static readonly float[] Mean = [0.485f, 0.456f, 0.406f];
-    private static readonly float[] Std = [0.229f, 0.224f, 0.225f];
+    // PaddleOCR inference preprocessing uses (pixel / 255 - 0.5) / 0.5
+    // for all RGB channels; ImageNet normalization would materially change
+    // the distribution expected by the PP-OCRv5 models.
+    private static readonly float[] Mean = [0.5f, 0.5f, 0.5f];
+    private static readonly float[] Std = [0.5f, 0.5f, 0.5f];
 
     public static async Task<OcrImageTensor> LoadAsync(string path, int targetSize = 960, CancellationToken cancellationToken = default)
     {
