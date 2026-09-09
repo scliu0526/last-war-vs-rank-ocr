@@ -89,13 +89,7 @@ public sealed class RankingWorkbookWriter
                 workbook.Save();
             }
 
-            if (File.Exists(backupPath))
-            {
-                File.Delete(backupPath);
-            }
-
-            File.Move(path, backupPath);
-            File.Move(temporaryPath, path);
+            File.Replace(temporaryPath, path, backupPath, ignoreMetadataErrors: true);
         }
         catch
         {
