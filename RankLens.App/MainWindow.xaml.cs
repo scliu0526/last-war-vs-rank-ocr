@@ -207,11 +207,15 @@ public partial class MainWindow : Window
         if (CandidatesGrid.SelectedItem is not RankingCandidate candidate || !File.Exists(candidate.SourceImage))
         {
             SourceImageLabel.Text = string.Empty;
+            SourceGeometryLabel.Text = string.Empty;
             SourceImagePreview.Source = null;
             return;
         }
 
         SourceImageLabel.Text = Path.GetFileName(candidate.SourceImage);
+        SourceGeometryLabel.Text = candidate.SourceBottom > candidate.SourceTop
+            ? $"OCR 列範圍：Y={candidate.SourceTop}～{candidate.SourceBottom}"
+            : "OCR 列座標不可用";
         var image = new BitmapImage();
         image.BeginInit();
         image.CacheOption = BitmapCacheOption.OnLoad;
