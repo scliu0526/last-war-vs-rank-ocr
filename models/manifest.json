@@ -7,8 +7,8 @@
   "sourceRevision": "det:dcf248c; rec:b70df21; dict:2661c7c0ef5c613e8f93c6e93b2e052399f0f854",
   "detectionSourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det_onnx/resolve/main/inference.onnx?download=true",
   "recognitionSourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx/resolve/main/inference.onnx?download=true",
-  "dictionarySourceUrl": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/2661c7c0ef5c613e8f93c6e93b2e052399f0f854/ppocr/utils/ppocr_keys_v1.txt",
+  "dictionarySourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx/resolve/b70df21/inference.yml",
   "detectionSha256": "10803475A591F7DC623E24670FB5752EC94D39A1F8CF069AAC1B6F0CE19CFC85",
   "recognitionSha256": "D9DC333C9C7B042C6DFFB8E33D72B6F65C9C1D463D0A3C2F78174FEA55E94752",
-  "characterDictionarySha256": "A1C84D9BDB9AB29043C58896224D32941783EB821629618416DCB08F12886492"
+  "characterDictionarySha256": "2F441BB2D6A22F791C0C0934B955B91CECC8766EACD9CF48AC321B748918C950"
 }
