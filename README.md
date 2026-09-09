@@ -27,3 +27,9 @@ Source code is released under the MIT License. See [LICENSE](LICENSE) and [THIRD
 ## Continuous validation
 
 GitHub Actions runs on a Windows runner for every push and pull request. It executes the Release build, the automated test suite, and the synthetic release-security gate. The workflow does not claim that real OCR models, private screenshots, or GPU hardware have been validated.
+
+To run the same release-security gate locally:
+
+```powershell
+pwsh ./scripts/test-release-security.ps1
+```

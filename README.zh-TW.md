@@ -15,3 +15,9 @@ RankLens 是非官方、離線執行的 Windows 桌面應用程式，用於校�
 ## 持續驗證
 
 每次 push 與 pull request 都會在 Windows runner 執行 Release build、自動化測試及合成發佈安全閘門。此工作流程不代表真實 OCR 模型、私人截圖或 GPU 硬體已完成驗證。
+
+要在本機執行相同的發佈安全閘門：
+
+```powershell
+pwsh ./scripts/test-release-security.ps1
+```
