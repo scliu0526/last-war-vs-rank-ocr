@@ -2,6 +2,7 @@ namespace RankLens.App;
 
 public enum RankingCategory
 {
+    PendingClassification,
     Weekly,
     Monday,
     Tuesday,

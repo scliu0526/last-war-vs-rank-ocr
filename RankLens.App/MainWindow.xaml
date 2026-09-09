@@ -52,6 +52,7 @@
                     <DataGridTextColumn Header="排名" Binding="{Binding Rank}" IsReadOnly="True" />
                     <DataGridTextColumn Header="指揮官名稱" Binding="{Binding CommanderName, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="同盟名稱" Binding="{Binding AllianceName, UpdateSourceTrigger=PropertyChanged}" />
+                    <DataGridCheckBoxColumn Header="確認無同盟" Binding="{Binding NoAllianceConfirmed, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="積分" Binding="{Binding Score, UpdateSourceTrigger=PropertyChanged}" />
                 </DataGrid.Columns>
                 </DataGrid>

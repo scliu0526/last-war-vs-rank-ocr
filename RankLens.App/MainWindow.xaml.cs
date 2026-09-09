@@ -221,7 +221,6 @@ public partial class MainWindow : Window
             Directory.CreateDirectory(settings.OutputFolder);
         }
         settingsStore.Save(settings);
-        CandidateSelectionPolicy.Apply(Candidates, settings.ConfidenceThreshold);
     }
 }
 
@@ -239,6 +238,10 @@ internal sealed class SidecarTextRecognitionSource : IRecognitionSource
 
         var lines = File.ReadLines(sidecar).ToArray();
         var candidates = OcrCandidateParser.ParsePlainText(OcrCandidateParser.DetectCategory(lines), image, lines);
+        foreach (var candidate in candidates)
+        {
+            candidate.ClassificationResolved = OcrCandidateParser.IsCategoryResolved(lines);
+        }
         return Task.FromResult(candidates);
     }
 }

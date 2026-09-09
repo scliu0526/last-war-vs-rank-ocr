@@ -18,7 +18,19 @@ public static partial class OcrCandidateParser
         if (text.Contains("星期六", StringComparison.OrdinalIgnoreCase)) return RankingCategory.Saturday;
         return text.Contains("本週排名", StringComparison.OrdinalIgnoreCase)
             ? RankingCategory.Weekly
-            : RankingCategory.Weekly;
+            : RankingCategory.PendingClassification;
+    }
+
+    public static bool IsCategoryResolved(IEnumerable<string> lines)
+    {
+        var text = string.Join(" ", lines);
+        return text.Contains("本週排名", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("星期一", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("星期二", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("星期三", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("星期四", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("星期五", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("星期六", StringComparison.OrdinalIgnoreCase);
     }
     [GeneratedRegex(@"^\s*(?<rank>\d{1,3})\s+(?<name>.+?)\s+(?<score>[\d,\s]+)\s*$")]
     private static partial Regex RankLineRegex();
@@ -66,6 +78,7 @@ public static partial class OcrCandidateParser
                 CommanderName = match.Groups["name"].Value.Trim(),
                 AllianceName = structured ? match.Groups["alliance"].Value.Trim() : string.Empty,
                 Score = score,
+                NoAllianceConfirmed = structured && string.Equals(match.Groups["alliance"].Value.Trim(), "無同盟", StringComparison.Ordinal),
                 IsSelected = true,
                 SourceImage = sourceImage
             });
