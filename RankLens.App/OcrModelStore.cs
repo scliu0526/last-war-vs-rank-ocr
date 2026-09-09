@@ -22,9 +22,24 @@ public sealed class OcrModelStore
         {
             throw new InvalidOperationException("OCR 模型授權聲明尚未完成核對，拒絕載入。");
         }
+        ValidateProvenance(manifest);
         ValidateFile(manifest.DetectionModel, manifest.DetectionSha256, modelDirectory);
         ValidateFile(manifest.RecognitionModel, manifest.RecognitionSha256, modelDirectory);
         ValidateFile(manifest.CharacterDictionary, manifest.CharacterDictionarySha256, modelDirectory);
+    }
+
+    private static void ValidateProvenance(OcrModelManifest manifest)
+    {
+        foreach (var value in new[] { manifest.ModelVersion, manifest.SourceRevision })
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Contains("PENDING", StringComparison.OrdinalIgnoreCase) || value.Contains("placeholder", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("OCR 模型來源版本資訊尚未完成核對，拒絕載入。");
+        }
+        foreach (var source in new[] { manifest.DetectionSourceUrl, manifest.RecognitionSourceUrl, manifest.DictionarySourceUrl })
+        {
+            if (!Uri.TryCreate(source, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+                throw new InvalidOperationException("OCR 模型來源必須使用 HTTPS。");
+        }
     }
 
     private static void ValidateFile(string fileName, string expectedHash, string directory)

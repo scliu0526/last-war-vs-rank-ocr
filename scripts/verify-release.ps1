@@ -26,6 +26,10 @@ try {
     foreach ($metadata in @($manifest.modelVersion, $manifest.sourceRevision, $manifest.detectionSourceUrl, $manifest.recognitionSourceUrl, $manifest.dictionarySourceUrl)) {
         if ([string]::IsNullOrWhiteSpace($metadata) -or $metadata -match "PENDING|placeholder") { throw "Release manifest is missing verified model provenance metadata." }
     }
+    foreach ($sourceUrl in @($manifest.detectionSourceUrl, $manifest.recognitionSourceUrl, $manifest.dictionarySourceUrl)) {
+        $parsedUrl = $null
+        if (-not [Uri]::TryCreate($sourceUrl, [UriKind]::Absolute, [ref]$parsedUrl) -or $parsedUrl.Scheme -ne "https") { throw "Release manifest model provenance URLs must use HTTPS absolute URLs." }
+    }
     foreach ($hash in @($manifest.detectionSha256, $manifest.recognitionSha256, $manifest.characterDictionarySha256)) {
         if ($hash -notmatch '^[0-9A-Fa-f]{64}$') { throw "Release manifest contains a non-canonical model SHA-256 value." }
     }

@@ -16,6 +16,10 @@ if (([string]::IsNullOrWhiteSpace($manifestJson.license)) -or ($manifestJson.lic
 foreach ($metadata in @($manifestJson.modelVersion, $manifestJson.sourceRevision, $manifestJson.detectionSourceUrl, $manifestJson.recognitionSourceUrl, $manifestJson.dictionarySourceUrl)) {
     if ([string]::IsNullOrWhiteSpace($metadata) -or $metadata -match "PENDING|placeholder") { throw "models/manifest.json is missing verified model provenance metadata." }
 }
+foreach ($sourceUrl in @($manifestJson.detectionSourceUrl, $manifestJson.recognitionSourceUrl, $manifestJson.dictionarySourceUrl)) {
+    $parsedUrl = $null
+    if (-not [Uri]::TryCreate($sourceUrl, [UriKind]::Absolute, [ref]$parsedUrl) -or $parsedUrl.Scheme -ne "https") { throw "Model provenance URLs must use HTTPS absolute URLs." }
+}
 foreach ($entry in @(
     @{ Name = $manifestJson.detectionModel; Hash = $manifestJson.detectionSha256 },
     @{ Name = $manifestJson.recognitionModel; Hash = $manifestJson.recognitionSha256 },
