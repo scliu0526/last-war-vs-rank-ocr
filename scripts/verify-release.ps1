@@ -25,6 +25,9 @@ try {
         throw "Release archive contains private screenshot/image content: $($forbiddenEntries[0])"
     }
     foreach ($name in $required) { if (-not $entryNames.Contains($name)) { throw "Release archive is missing $name" } }
+    $allowedModelEntries = @("models/manifest.json", "models/README.md", "models/PP-OCRv5_det.onnx", "models/PP-OCRv5_rec.onnx", "models/ppocrv5_dict.txt")
+    $unexpectedModelEntries = @($entryNames | Where-Object { $_.StartsWith("models/", [StringComparison]::OrdinalIgnoreCase) -and $_ -notin $allowedModelEntries })
+    if ($unexpectedModelEntries.Count -gt 0) { throw "Release archive contains an unexpected model/staging entry: $($unexpectedModelEntries[0])" }
     foreach ($package in @(
         @{ Id = "documentformat.openxml"; Version = "3.3.0" },
         @{ Id = "documentformat.openxml.framework"; Version = "3.3.0" },
