@@ -10,9 +10,12 @@ public partial class MainWindow : Window
     public ObservableCollection<RankingCandidate> Candidates { get; } = [];
     private string[] selectedImages = [];
     private CancellationTokenSource? batchCancellation;
+    private readonly AppSettingsStore settingsStore = new();
+    private readonly AppSettings settings;
 
     public MainWindow()
     {
+        settings = settingsStore.Load();
         InitializeComponent();
         RankingMondayPicker.SelectedDate = RankingWeek.Current(DateOnly.FromDateTime(DateTime.Today)).Monday.ToDateTime(TimeOnly.MinValue);
         CandidatesGrid.ItemsSource = Candidates;
@@ -84,9 +87,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        var folder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        var folder = settings.OutputFolder;
         new RankLensWorkflow(new RankingWorkbookWriter())
             .WriteConfirmed(folder, new ReviewSession(week, Candidates));
+        new LocalLog(settings).Write("Info", $"Workbook updated for {week.FileName}.");
         MessageBox.Show($"已寫入 {Path.Combine(folder, week.FileName)}。", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }
