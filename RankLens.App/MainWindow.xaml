@@ -45,7 +45,9 @@
                 <Button x:Name="CancelBatchButton" Margin="12,0,0,0" Click="CancelBatchClick" Content="取消" IsEnabled="False" Padding="12,3" />
             </StackPanel>
             <Border Grid.Row="1" Margin="0,12,0,0" Padding="12" BorderBrush="LightGray" BorderThickness="1" CornerRadius="6">
-                <DataGrid x:Name="CandidatesGrid" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" IsReadOnly="False">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <DataGrid Grid.Column="0" x:Name="CandidatesGrid" SelectionChanged="CandidateSelectionChanged" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" IsReadOnly="False">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="確認" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="分類" Binding="{Binding Category}" IsReadOnly="True" />
@@ -56,6 +58,14 @@
                     <DataGridTextColumn Header="積分" Binding="{Binding Score, UpdateSourceTrigger=PropertyChanged}" />
                 </DataGrid.Columns>
                 </DataGrid>
+                    <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                        <TextBlock Text="來源圖片預覽" FontWeight="SemiBold" />
+                        <TextBlock x:Name="SourceImageLabel" Margin="0,4,0,8" TextWrapping="Wrap" Foreground="Gray" />
+                        <Border BorderBrush="LightGray" BorderThickness="1" Height="220">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"><Image x:Name="SourceImagePreview" Stretch="Uniform" /></ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

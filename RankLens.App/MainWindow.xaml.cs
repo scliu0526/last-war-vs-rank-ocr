@@ -4,6 +4,7 @@ using System.IO;
 using System.Globalization;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Media.Imaging;
 
 namespace RankLens.App;
 
@@ -153,6 +154,24 @@ public partial class MainWindow : Window
             OutputFolderTextBox.Text = dialog.FolderName;
             SaveSettingsFromControls();
         }
+    }
+
+    private void CandidateSelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (CandidatesGrid.SelectedItem is not RankingCandidate candidate || !File.Exists(candidate.SourceImage))
+        {
+            SourceImageLabel.Text = string.Empty;
+            SourceImagePreview.Source = null;
+            return;
+        }
+
+        SourceImageLabel.Text = Path.GetFileName(candidate.SourceImage);
+        var image = new BitmapImage();
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.UriSource = new Uri(candidate.SourceImage, UriKind.Absolute);
+        image.EndInit();
+        SourceImagePreview.Source = image;
     }
 
     private void WriteWorkbookClick(object sender, RoutedEventArgs e)
