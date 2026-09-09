@@ -33,3 +33,5 @@ To run the same release-security gate locally:
 ```powershell
 pwsh ./scripts/test-release-security.ps1
 ```
+
+See the [validation matrix](docs/validation-matrix.md) for issue-by-issue evidence and explicit unverified boundaries.

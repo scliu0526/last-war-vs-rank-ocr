@@ -21,3 +21,5 @@ RankLens 是非官方、離線執行的 Windows 桌面應用程式，用於校�
 ```powershell
 pwsh ./scripts/test-release-security.ps1
 ```
+
+各 Issue 的證據與尚未驗證邊界請參閱[驗證矩陣](docs/validation-matrix.md)。
