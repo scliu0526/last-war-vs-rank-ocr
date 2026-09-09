@@ -36,4 +36,19 @@ public class OcrModelStoreTests
         var manifest = Manifest("MIT", "1234", new string('a', 64));
         Assert.Throws<InvalidOperationException>(() => new OcrModelStore().Validate(manifest, Path.GetTempPath()));
     }
+
+    [Fact]
+    public void LoadManifestReadsReleaseCamelCaseJson()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ranklens-manifest-{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(path, "{\"detectionModel\":\"det.onnx\",\"recognitionModel\":\"rec.onnx\",\"characterDictionary\":\"dict.txt\",\"license\":\"MIT\",\"detectionSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"recognitionSha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}");
+            var manifest = new OcrModelStore().LoadManifest(path);
+            Assert.Equal("det.onnx", manifest.DetectionModel);
+            Assert.Equal("rec.onnx", manifest.RecognitionModel);
+            Assert.Equal("MIT", manifest.License);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
 }

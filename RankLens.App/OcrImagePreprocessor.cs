@@ -20,7 +20,9 @@ public static class OcrImagePreprocessor
         var stride = bitmap.PixelWidth * 4;
         var source = new byte[bitmap.PixelHeight * stride];
         bitmap.CopyPixels(source, stride, 0);
-        var tensor = new DenseTensor<float>(new[] { 1, 3, bitmap.PixelHeight, bitmap.PixelWidth });
+        var tensorWidth = AlignTo32(bitmap.PixelWidth);
+        var tensorHeight = AlignTo32(bitmap.PixelHeight);
+        var tensor = new DenseTensor<float>(new[] { 1, 3, tensorHeight, tensorWidth });
         for (var y = 0; y < bitmap.PixelHeight; y++)
         {
             for (var x = 0; x < bitmap.PixelWidth; x++)
@@ -53,6 +55,7 @@ public static class OcrImagePreprocessor
     }
 
     private static float Normalize(byte value, int channel) => (value / 255f - Mean[channel]) / Std[channel];
+    private static int AlignTo32(int value) => Math.Max(32, (value + 31) / 32 * 32);
 
     private static (BitmapSource Bitmap, int OriginalWidth, int OriginalHeight, float Scale) LoadBitmap(string path, int targetSize)
     {

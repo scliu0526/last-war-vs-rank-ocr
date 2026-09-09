@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace RankLens.App;
 
-public sealed record OcrTextLine(string Text, float Confidence, int Top, int Bottom);
+public sealed record OcrTextLine(string Text, float Confidence, int Top, int Bottom, int Left = 0);
 
 public static partial class OcrCandidateParser
 {
@@ -105,34 +105,50 @@ public static partial class OcrCandidateParser
         double confidenceThreshold = 0.95)
     {
         var result = new List<RankingCandidate>();
-        for (var index = 0; index < lines.Count; index++)
+        var ordered = lines.OrderBy(line => line.Top).ThenBy(line => line.Left).ToArray();
+        for (var index = 0; index < ordered.Length; index++)
         {
-            var match = Regex.Match(lines[index].Text, @"^\s*(?<rank>\d{1,3})(?:\s+(?<score>[\d,\s]+))?\s*$");
+            var match = Regex.Match(ordered[index].Text, @"^\s*(?<rank>\d{1,3})(?:\s+(?<score>[\d,\s]+))?\s*$");
             if (!match.Success) continue;
             if (!int.TryParse(match.Groups["rank"].Value, out var rank)) continue;
             var hasInlineScore = match.Groups["score"].Success;
-            var commanderIndex = index + 1;
-            var allianceIndex = commanderIndex + 1;
-            var scoreIndex = hasInlineScore ? index : allianceIndex + 1;
-            if (commanderIndex >= lines.Count || allianceIndex >= lines.Count || scoreIndex >= lines.Count) continue;
-            var commander = lines[commanderIndex];
-            var alliance = lines[allianceIndex];
-            var scoreText = hasInlineScore ? match.Groups["score"].Value : lines[scoreIndex].Text;
-            if (!long.TryParse(NormalizeScore(scoreText), NumberStyles.Integer, CultureInfo.InvariantCulture, out var score)) continue;
+            var nextRank = index + 1;
+            while (nextRank < ordered.Length
+                && (nextRank - index < 4
+                    || !Regex.IsMatch(ordered[nextRank].Text, @"^\s*\d{1,3}(?:\s+[\d,\s]+)?\s*$"))) nextRank++;
+            var group = ordered[(index + 1)..nextRank];
+            if (hasInlineScore)
+            {
+                group = [ordered[index]];
+            }
+            var scoreLine = group
+                .Select(line => (Line: line, Match: Regex.Match(line.Text, @"[\d][\d,，\s]*")))
+                .Where(item => item.Match.Success)
+                .OrderByDescending(item => NormalizeScore(item.Match.Value).Length)
+                .FirstOrDefault();
+            var scoreText = hasInlineScore ? match.Groups["score"].Value : scoreLine.Match?.Value ?? string.Empty;
+            var textLines = group.Where(line => !ReferenceEquals(line, scoreLine.Line)
+                && !Regex.IsMatch(line.Text, @"^\s*[\d,，\s]+\s*$"))
+                .Select(line => line.Text.Trim()).Where(text => text.Length > 0).ToArray();
+            if (!long.TryParse(NormalizeScore(scoreText), NumberStyles.Integer, CultureInfo.InvariantCulture, out var score)
+                || textLines.Length == 0) continue;
+            var commander = textLines[0];
+            var alliance = textLines.Length > 1 ? string.Join(" ", textLines.Skip(1)) : string.Empty;
+            var scoreConfidence = hasInlineScore ? ordered[index].Confidence : scoreLine.Line?.Confidence ?? 0;
             result.Add(new RankingCandidate
             {
                 Category = category, Rank = rank,
-                CommanderName = commander.Text.Trim(), AllianceName = alliance.Text.Trim(), Score = score,
-                RankConfidence = lines[index].Confidence,
-                CommanderConfidence = commander.Confidence,
-                AllianceConfidence = alliance.Confidence,
-                ScoreConfidence = lines[scoreIndex].Confidence,
-                NoAllianceConfirmed = string.Equals(alliance.Text.Trim(), "無同盟", StringComparison.Ordinal),
+                CommanderName = commander, AllianceName = alliance, Score = score,
+                RankConfidence = ordered[index].Confidence,
+                CommanderConfidence = ordered[index].Confidence,
+                AllianceConfidence = alliance.Length == 0 ? 0 : ordered[index].Confidence,
+                ScoreConfidence = scoreConfidence,
+                NoAllianceConfirmed = string.Equals(alliance, "無同盟", StringComparison.Ordinal),
                 IsSelected = false, SourceImage = sourceImage,
-                SourceTop = lines[index].Top,
-                SourceBottom = lines[scoreIndex].Bottom
+                SourceTop = ordered[index].Top,
+                SourceBottom = group.Length == 0 ? ordered[index].Bottom : group.Max(line => line.Bottom)
             });
-            index = scoreIndex;
+            index = Math.Max(index, nextRank - 1);
         }
         return result;
     }

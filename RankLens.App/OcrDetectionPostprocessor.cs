@@ -58,6 +58,54 @@ public static class OcrDetectionPostprocessor
                     (right + 1) * originalWidth / (float)width, (bottom + 1) * originalHeight / (float)height, confidence));
             }
         }
-        return boxes;
+        return MergeTextBoxes(boxes);
+    }
+
+    private static IReadOnlyList<DetectionBox> MergeTextBoxes(IReadOnlyList<DetectionBox> boxes)
+    {
+        var merged = new List<DetectionBox>();
+        foreach (var box in boxes.OrderBy(item => item.Top).ThenBy(item => item.Left))
+        {
+            var index = merged.FindIndex(existing =>
+            {
+                var overlap = Math.Min(existing.Bottom, box.Bottom) - Math.Max(existing.Top, box.Top);
+                var height = Math.Min(existing.Bottom - existing.Top, box.Bottom - box.Top);
+                var gap = box.Left - existing.Right;
+                return height > 0 && overlap / height >= 0.45f && gap >= -2 && gap <= Math.Max(12, height * 2.5f);
+            });
+            if (index < 0)
+            {
+                merged.Add(box);
+                continue;
+            }
+
+            var current = merged[index];
+            merged[index] = new DetectionBox(
+                Math.Min(current.Left, box.Left), Math.Min(current.Top, box.Top),
+                Math.Max(current.Right, box.Right), Math.Max(current.Bottom, box.Bottom),
+                Math.Max(current.Confidence, box.Confidence));
+        }
+        return merged;
+    }
+
+    public static IReadOnlyList<DetectionBox> Extract(
+        OcrTensorOutput output, float threshold, int originalWidth, int originalHeight, float scale)
+    {
+        if (output.Dimensions.Length != 4 || output.Dimensions[0] != 1 || output.Dimensions[1] != 1)
+            throw new InvalidDataException("Detection 模型輸出必須是 [1,1,height,width] 機率圖。 ");
+        return Extract(new DenseTensor<float>(output.Values, output.Dimensions), threshold, originalWidth, originalHeight, scale);
+    }
+
+    public static IReadOnlyList<DetectionBox> Extract(
+        DenseTensor<float> map, float threshold, int originalWidth, int originalHeight, float scale)
+    {
+        if (scale <= 0) throw new ArgumentOutOfRangeException(nameof(scale));
+        var padded = Extract(map, threshold, map.Dimensions[3], map.Dimensions[2]);
+        return padded.Select(box => new DetectionBox(
+            Math.Clamp(box.Left / scale, 0, originalWidth),
+            Math.Clamp(box.Top / scale, 0, originalHeight),
+            Math.Clamp(box.Right / scale, 0, originalWidth),
+            Math.Clamp(box.Bottom / scale, 0, originalHeight),
+            box.Confidence)).Where(box => box.Right > box.Left && box.Bottom > box.Top).ToArray();
     }
 }

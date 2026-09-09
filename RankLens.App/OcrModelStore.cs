@@ -9,7 +9,8 @@ public sealed class OcrModelStore
     public OcrModelManifest LoadManifest(string manifestPath)
     {
         using var stream = File.OpenRead(manifestPath);
-        return JsonSerializer.Deserialize<OcrModelManifest>(stream)
+        return JsonSerializer.Deserialize<OcrModelManifest>(stream, new JsonSerializerOptions
+            { PropertyNameCaseInsensitive = true })
             ?? throw new InvalidDataException("OCR 模型 manifest 無法解析。");
     }
 

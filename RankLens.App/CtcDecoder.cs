@@ -19,9 +19,17 @@ public static class CtcDecoder
             if (index != blankIndex && index != previous && index < dictionary.Count)
             {
                 text.Append(dictionary[index]);
-                var maximum = timestep.Max();
-                var denominator = timestep.Sum(value => Math.Exp(value - maximum));
-                confidenceTotal += denominator == 0 ? 0 : Math.Exp(timestep[index] - maximum) / denominator;
+                var sum = timestep.Sum();
+                if (sum > 0 && sum <= 1.01 && timestep.All(value => value >= 0 && value <= 1))
+                {
+                    confidenceTotal += timestep[index];
+                }
+                else
+                {
+                    var maximum = timestep.Max();
+                    var denominator = timestep.Sum(value => Math.Exp(value - maximum));
+                    confidenceTotal += denominator == 0 ? 0 : Math.Exp(timestep[index] - maximum) / denominator;
+                }
                 confidenceCount++;
             }
             previous = index;
