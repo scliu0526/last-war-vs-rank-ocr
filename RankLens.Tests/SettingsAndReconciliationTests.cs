@@ -64,4 +64,26 @@ public class SettingsAndReconciliationTests
         candidate.NoAllianceConfirmed = true;
         Assert.True(candidate.IsValid);
     }
+
+    [Fact]
+    public void CollisionResolutionSupportsMoveKeepBothAndIgnore()
+    {
+        RankingCandidate Candidate(int rank) => new()
+        {
+            Category = RankingCategory.Monday, Rank = rank, CommanderName = "same",
+            AllianceName = "A", Score = rank, IsSelected = false
+        };
+        var first = Candidate(1);
+        var second = Candidate(2);
+        CandidateReconciler.ResolveNameCollision([first, second], NameCollisionResolution.KeepBoth);
+        Assert.True(first.IsSelected);
+        Assert.True(second.IsSelected);
+
+        CandidateReconciler.ResolveNameCollision([first, second], NameCollisionResolution.IgnoreNew);
+        Assert.False(second.IsSelected);
+        CandidateReconciler.ResolveNameCollision([first, second], NameCollisionResolution.MoveRank, 10);
+        Assert.Equal(10, first.Rank);
+        Assert.True(first.IsSelected);
+        Assert.False(second.IsSelected);
+    }
 }

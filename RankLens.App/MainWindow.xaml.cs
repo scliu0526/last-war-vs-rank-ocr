@@ -250,7 +250,7 @@ public partial class MainWindow : Window
             CandidatesGrid.Items.Refresh();
             return;
         }
-        candidate.IsSelected = candidate.IsValid;
+        CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.MoveRank, candidate.Rank);
         CandidatesGrid.Items.Refresh();
     }
 
@@ -258,7 +258,7 @@ public partial class MainWindow : Window
     {
         if (SelectedCandidate is { } candidate && candidate.IsValid)
         {
-            candidate.IsSelected = true;
+            CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.KeepBoth);
             CandidatesGrid.Items.Refresh();
         }
     }
@@ -267,7 +267,7 @@ public partial class MainWindow : Window
     {
         if (SelectedCandidate is { } candidate)
         {
-            candidate.IsSelected = false;
+            CandidateReconciler.ResolveNameCollision([candidate], NameCollisionResolution.IgnoreNew);
             CandidatesGrid.Items.Refresh();
         }
     }
