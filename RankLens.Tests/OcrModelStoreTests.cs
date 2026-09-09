@@ -11,4 +11,11 @@ public class OcrModelStoreTests
         var exception = Assert.Throws<InvalidOperationException>(() => new OcrModelStore().Validate(manifest, Path.GetTempPath()));
         Assert.Contains("授權", exception.Message);
     }
+
+    [Fact]
+    public void ManifestCannotEscapeModelDirectory()
+    {
+        var manifest = new OcrModelManifest("..\\det.onnx", "rec.onnx", "dict.txt", "MIT", "abc", "def");
+        Assert.Throws<InvalidDataException>(() => new OcrModelStore().Validate(manifest, Path.GetTempPath()));
+    }
 }

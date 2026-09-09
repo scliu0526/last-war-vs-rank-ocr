@@ -23,6 +23,10 @@ public sealed class OcrModelStore
         }
         ValidateFile(manifest.DetectionModel, manifest.DetectionSha256, modelDirectory);
         ValidateFile(manifest.RecognitionModel, manifest.RecognitionSha256, modelDirectory);
+        if (Path.GetFileName(manifest.CharacterDictionary) != manifest.CharacterDictionary || manifest.CharacterDictionary.Contains("..", StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("OCR manifest 字典檔名無效。");
+        }
         if (!File.Exists(Path.Combine(modelDirectory, manifest.CharacterDictionary)))
         {
             throw new FileNotFoundException("找不到 OCR 字典檔。", manifest.CharacterDictionary);
@@ -31,6 +35,12 @@ public sealed class OcrModelStore
 
     private static void ValidateFile(string fileName, string expectedHash, string directory)
     {
+        if (string.IsNullOrWhiteSpace(fileName)
+            || Path.GetFileName(fileName) != fileName
+            || fileName.Contains("..", StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("OCR manifest 檔名無效。");
+        }
         if (string.IsNullOrWhiteSpace(expectedHash) || expectedHash.StartsWith("PENDING_", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("OCR 模型尚未設定固定 SHA-256，拒絕載入未鎖定的模型。");
