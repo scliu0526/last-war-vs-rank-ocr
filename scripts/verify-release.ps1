@@ -19,6 +19,8 @@ try {
     $entryNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in $zip.Entries) { [void]$entryNames.Add($entry.FullName.Replace('\', '/')) }
     foreach ($name in $required) { if (-not $entryNames.Contains($name)) { throw "Release archive is missing $name" } }
+    $noticeEntries = @($entryNames | Where-Object { $_.StartsWith("licenses/", [StringComparison]::OrdinalIgnoreCase) -and $_ -notmatch '/$' })
+    if ($noticeEntries.Count -eq 0) { throw "Release archive is missing bundled dependency notices." }
     $manifestEntry = $zip.GetEntry("models/manifest.json")
     $reader = [System.IO.StreamReader]::new($manifestEntry.Open())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }

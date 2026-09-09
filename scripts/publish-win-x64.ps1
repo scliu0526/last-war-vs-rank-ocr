@@ -43,6 +43,28 @@ Copy-Item (Join-Path $repo "models") (Join-Path $out "models") -Recurse -Force
 foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md")) {
     Copy-Item (Join-Path $repo $document) (Join-Path $out $document) -Force
 }
+$globalPackages = if ([string]::IsNullOrWhiteSpace($env:NUGET_PACKAGES)) { Join-Path $env:USERPROFILE ".nuget\packages" } else { $env:NUGET_PACKAGES }
+$noticeRoot = Join-Path $out "licenses"
+New-Item -ItemType Directory -Path $noticeRoot -Force | Out-Null
+foreach ($package in @(
+    @{ Id = "documentformat.openxml"; Version = "3.3.0" },
+    @{ Id = "documentformat.openxml.framework"; Version = "3.3.0" },
+    @{ Id = "microsoft.ai.directml"; Version = "1.15.4" },
+    @{ Id = "microsoft.ml.onnxruntime"; Version = "1.24.1" },
+    @{ Id = "microsoft.ml.onnxruntime.managed"; Version = "1.24.1" },
+    @{ Id = "microsoft.ml.onnxruntime.directml"; Version = "1.24.1" },
+    @{ Id = "system.management"; Version = "9.0.9" },
+    @{ Id = "system.numerics.tensors"; Version = "9.0.0" }
+)) {
+    $packageDir = Join-Path (Join-Path $globalPackages $package.Id) $package.Version
+    if (-not (Test-Path -LiteralPath $packageDir)) { throw "Resolved package is missing from the NuGet cache: $($package.Id) $($package.Version)" }
+    $targetDir = Join-Path $noticeRoot "$($package.Id)-$($package.Version)"
+    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+    $noticeFiles = Get-ChildItem -LiteralPath $packageDir -File | Where-Object { $_.Name -match '^(LICENSE|ThirdPartyNotices|THIRD-PARTY-NOTICES)' }
+    if ($noticeFiles.Count -eq 0) { $noticeFiles = Get-ChildItem -LiteralPath $packageDir -File -Filter "README.md" }
+    if ($noticeFiles.Count -eq 0) { throw "No package notice file found: $($package.Id) $($package.Version)" }
+    Copy-Item -LiteralPath $noticeFiles.FullName -Destination $targetDir -Force
+}
 $archive = Join-Path (Split-Path $out -Parent) "RankLens-win-x64.zip"
 if (Test-Path $archive) { Remove-Item -LiteralPath $archive -Force }
 Compress-Archive -Path (Join-Path $out "*") -DestinationPath $archive -Force
