@@ -31,6 +31,23 @@ public static class OcrImagePreprocessor
         return new OcrImageTensor(tensor, loaded.OriginalWidth, loaded.OriginalHeight, loaded.Scale);
     }
 
+    public static DenseTensor<float> CropAndResize(OcrImageTensor image, DetectionBox box, int targetWidth = 320, int targetHeight = 48)
+    {
+        var left = Math.Clamp((int)Math.Floor(box.Left * image.Scale), 0, image.Tensor.Dimensions[3] - 1);
+        var top = Math.Clamp((int)Math.Floor(box.Top * image.Scale), 0, image.Tensor.Dimensions[2] - 1);
+        var right = Math.Clamp((int)Math.Ceiling(box.Right * image.Scale), left + 1, image.Tensor.Dimensions[3]);
+        var bottom = Math.Clamp((int)Math.Ceiling(box.Bottom * image.Scale), top + 1, image.Tensor.Dimensions[2]);
+        var result = new DenseTensor<float>(new[] { 1, 3, targetHeight, targetWidth });
+        for (var y = 0; y < targetHeight; y++)
+        for (var x = 0; x < targetWidth; x++)
+        {
+            var sourceX = left + Math.Min(right - left - 1, x * (right - left) / targetWidth);
+            var sourceY = top + Math.Min(bottom - top - 1, y * (bottom - top) / targetHeight);
+            for (var channel = 0; channel < 3; channel++) result[0, channel, y, x] = image.Tensor[0, channel, sourceY, sourceX];
+        }
+        return result;
+    }
+
     private static (BitmapSource Bitmap, int OriginalWidth, int OriginalHeight, float Scale) LoadBitmap(string path, int targetSize)
     {
         using var stream = File.OpenRead(path);

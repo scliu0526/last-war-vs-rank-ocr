@@ -7,6 +7,14 @@ public sealed record DetectionBox(float Left, float Top, float Right, float Bott
 
 public static class OcrDetectionPostprocessor
 {
+    public static IReadOnlyList<DetectionBox> Extract(OcrTensorOutput output, float threshold, int originalWidth, int originalHeight)
+    {
+        if (output.Dimensions.Length != 4 || output.Dimensions[0] != 1 || output.Dimensions[1] != 1)
+            throw new InvalidDataException("Detection 模型輸出必須是 [1,1,height,width] 機率圖。");
+        var tensor = new DenseTensor<float>(output.Values, output.Dimensions);
+        return Extract(tensor, threshold, originalWidth, originalHeight);
+    }
+
     public static IReadOnlyList<DetectionBox> Extract(DenseTensor<float> map, float threshold, int originalWidth, int originalHeight)
     {
         var dimensions = map.Dimensions.ToArray();

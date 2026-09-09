@@ -144,11 +144,14 @@ public partial class MainWindow : Window
         BatchStatus.Text = "正在辨識…";
         try
         {
-            if (settings.ExecutionMode == RecognitionExecutionMode.DirectML)
+            using var onnxRuntime = TryCreateOcrRuntime(settings);
+            if (settings.ExecutionMode == RecognitionExecutionMode.DirectML && onnxRuntime is null)
             {
-                throw new InvalidOperationException("DirectML 已選取，但完整 PP-OCRv5 GPU 推論管線尚未安裝；為避免靜默改用 CPU，請切換回 CPU 模式。\n模型安裝完成後再啟用 DirectML。");
+                throw new InvalidOperationException("DirectML 需要已驗證的 PP-OCRv5 模型組；請先安裝模型或切換回 CPU 模式。");
             }
-            var source = new FallbackRecognitionSource(new WindowsOcrRecognitionSource(), new SidecarTextRecognitionSource());
+            IRecognitionSource source = onnxRuntime is null
+                ? new FallbackRecognitionSource(new WindowsOcrRecognitionSource(), new SidecarTextRecognitionSource())
+                : new OnnxOcrRecognitionSource(onnxRuntime, textConfidenceThreshold: settings.ConfidenceThreshold);
             var processor = new BatchRecognitionProcessor();
             var progress = new Progress<int>(value => BatchProgress.Value = value);
             var results = await processor.ProcessAsync(selectedImages, source, progress, batchCancellation.Token);
@@ -183,6 +186,17 @@ public partial class MainWindow : Window
             batchCancellation?.Dispose();
             batchCancellation = null;
         }
+    }
+
+    private static OcrRuntime? TryCreateOcrRuntime(AppSettings currentSettings)
+    {
+        var modelDirectory = Path.Combine(AppContext.BaseDirectory, "models");
+        var manifestPath = Path.Combine(modelDirectory, "manifest.json");
+        if (!File.Exists(manifestPath)) return null;
+        var manifest = new OcrModelStore().LoadManifest(manifestPath);
+        var adapterId = new GpuAdapterCatalog().Enumerate()
+            .FirstOrDefault(adapter => string.Equals(adapter.Name, currentSettings.AdapterName, StringComparison.Ordinal))?.DeviceId ?? 0;
+        return new OcrRuntimeFactory().Create(new OcrRuntimeConfiguration(currentSettings.ExecutionMode, adapterId, modelDirectory), manifest);
     }
 
     private void ChooseOutputFolderClick(object sender, RoutedEventArgs e)

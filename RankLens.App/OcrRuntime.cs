@@ -50,22 +50,31 @@ public sealed class OcrRuntimeFactory
     }
 }
 
-public sealed class OcrRuntime(InferenceSession detection, InferenceSession recognition, IReadOnlyList<string> dictionary) : IDisposable
+public interface IOcrInferenceRuntime : IDisposable
+{
+    IReadOnlyList<OcrTensorOutput> RunDetection(DenseTensor<float> imageTensor);
+    IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor);
+    IReadOnlyList<string> Dictionary { get; }
+}
+
+public sealed class OcrRuntime(InferenceSession detection, InferenceSession recognition, IReadOnlyList<string> dictionary) : IOcrInferenceRuntime
 {
     public InferenceSession Detection { get; } = detection;
     public InferenceSession Recognition { get; } = recognition;
     public IReadOnlyList<string> Dictionary { get; } = dictionary;
 
-    public IDisposableReadOnlyCollection<DisposableNamedOnnxValue> RunDetection(DenseTensor<float> imageTensor)
+    public IReadOnlyList<OcrTensorOutput> RunDetection(DenseTensor<float> imageTensor)
     {
         var input = Detection.InputMetadata.Keys.First();
-        return Detection.Run(new[] { NamedOnnxValue.CreateFromTensor(input, imageTensor) });
+        using var outputs = Detection.Run(new[] { NamedOnnxValue.CreateFromTensor(input, imageTensor) });
+        return OcrOutputReader.Read(outputs);
     }
 
-    public IDisposableReadOnlyCollection<DisposableNamedOnnxValue> RunRecognition(DenseTensor<float> imageTensor)
+    public IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor)
     {
         var input = Recognition.InputMetadata.Keys.First();
-        return Recognition.Run(new[] { NamedOnnxValue.CreateFromTensor(input, imageTensor) });
+        using var outputs = Recognition.Run(new[] { NamedOnnxValue.CreateFromTensor(input, imageTensor) });
+        return OcrOutputReader.Read(outputs);
     }
 
     public void Dispose()
