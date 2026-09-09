@@ -276,6 +276,14 @@ public partial class MainWindow : Window
         if (SourceList.SelectedItem is SourceObservation source) ShowSource(source);
     }
 
+    private void SourceZoomChanged(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (SourceCanvasHost is null || SourceZoomSlider is null) return;
+        var scale = SourceZoomSlider.Value;
+        SourceCanvasHost.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
+        SourceZoomLabel.Text = $"{scale:P0}";
+    }
+
     private void ShowSource(SourceObservation source)
     {
         if (!File.Exists(source.ImagePath)) return;

@@ -81,9 +81,14 @@
                         <TextBlock x:Name="SourceImageLabel" Margin="0,4,0,8" TextWrapping="Wrap" Foreground="Gray" />
                         <ListBox x:Name="SourceList" Height="48" Margin="0,0,0,8" SelectionChanged="SourceSelectionChanged" DisplayMemberPath="ImagePath" />
                         <TextBlock x:Name="SourceGeometryLabel" Margin="0,0,0,8" Foreground="Gray" />
+                        <StackPanel Margin="0,0,0,8" Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="縮放：" />
+                            <Slider x:Name="SourceZoomSlider" Width="140" Minimum="0.5" Maximum="3" Value="1" TickFrequency="0.25" IsSnapToTickEnabled="True" ValueChanged="SourceZoomChanged" />
+                            <TextBlock x:Name="SourceZoomLabel" Margin="8,0,0,0" VerticalAlignment="Center" Text="100%" />
+                        </StackPanel>
                         <Border BorderBrush="LightGray" BorderThickness="1" Height="220">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                                <Grid>
+                                <Grid x:Name="SourceCanvasHost" LayoutTransform="{x:Null}">
                                     <Image x:Name="SourceImagePreview" Stretch="None" HorizontalAlignment="Left" VerticalAlignment="Top" />
                                     <Canvas x:Name="SourceOverlay" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top">
                                         <Rectangle x:Name="SourceHighlight" Fill="#55FFD700" Stroke="Goldenrod" StrokeThickness="2" />
