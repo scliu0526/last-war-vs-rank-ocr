@@ -44,11 +44,30 @@ public sealed class RankingCandidate
     public bool NoAllianceConfirmed { get; set; }
     public bool IsSelected { get; set; }
     public string SourceImage { get; init; } = string.Empty;
+    public double RankConfidence { get; init; } = 1;
+    public double CommanderConfidence { get; init; } = 1;
+    public double AllianceConfidence { get; init; } = 1;
+    public double ScoreConfidence { get; init; } = 1;
 
     public bool IsValid => Rank is >= 1 and <= 200
         && !string.IsNullOrWhiteSpace(CommanderName)
         && Score >= 0
         && (!string.IsNullOrWhiteSpace(AllianceName) || NoAllianceConfirmed);
+}
+
+public static class CandidateSelectionPolicy
+{
+    public static void Apply(IReadOnlyList<RankingCandidate> candidates, double threshold = 0.95)
+    {
+        foreach (var candidate in candidates)
+        {
+            candidate.IsSelected = candidate.IsValid
+                && candidate.RankConfidence >= threshold
+                && candidate.CommanderConfidence >= threshold
+                && candidate.AllianceConfidence >= threshold
+                && candidate.ScoreConfidence >= threshold;
+        }
+    }
 }
 
 public interface IRecognitionSource
