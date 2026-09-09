@@ -449,6 +449,7 @@ internal sealed class SidecarTextRecognitionSource : IRecognitionSource
     {
         cancellationToken.ThrowIfCancellationRequested();
         var image = imagePaths.Single();
+        ScreenshotInputValidator.ValidatePortrait(image);
         var sidecar = Path.ChangeExtension(image, ".txt");
         if (!File.Exists(sidecar))
         {

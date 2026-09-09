@@ -33,6 +33,9 @@ dotnet publish (Join-Path $repo "RankLens.App\RankLens.App.csproj") `
     --output $out
 
 Copy-Item (Join-Path $repo "models") (Join-Path $out "models") -Recurse -Force
+foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md")) {
+    Copy-Item (Join-Path $repo $document) (Join-Path $out $document) -Force
+}
 $archive = Join-Path (Split-Path $out -Parent) "RankLens-win-x64.zip"
 if (Test-Path $archive) { Remove-Item -LiteralPath $archive -Force }
 Compress-Archive -Path (Join-Path $out "*") -DestinationPath $archive -Force

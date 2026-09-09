@@ -20,9 +20,16 @@ function Download-Verified([string]$url, [string]$name, [string]$hash) {
     if ($uri.Scheme -ne "https") { throw "Model downloads must use HTTPS: $name" }
     if ($hash -notmatch '^[0-9A-Fa-f]{64}$') { throw "SHA-256 must contain exactly 64 hexadecimal characters: $name" }
     $target = Join-Path $modelDir $name
-    Invoke-WebRequest -Uri $url -OutFile $target
-    $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $target).Hash
-    if ($actual -ne $hash) { throw "SHA-256 mismatch for $name" }
+    $temporary = "$target.$([Guid]::NewGuid().ToString('N')).download"
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $temporary
+        $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $temporary).Hash
+        if ($actual -ne $hash) { throw "SHA-256 mismatch for $name" }
+        Move-Item -LiteralPath $temporary -Destination $target -Force
+    }
+    finally {
+        if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force }
+    }
 }
 
 foreach ($hash in @($DetectionSha256, $RecognitionSha256, $DictionarySha256)) {
