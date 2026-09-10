@@ -19,4 +19,14 @@
     <PackageReference Include="System.Management" Version="9.0.9" />
   </ItemGroup>
 
+  <!-- Keep a local model installation available when launching the normal
+       bin/Release executable. The publish script also stages these files for
+       the distributable ZIP. -->
+  <ItemGroup>
+    <None Include="..\models\manifest.json" Condition="Exists('..\models\manifest.json')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\manifest.json" />
+    <None Include="..\models\PP-OCRv5_det.onnx" Condition="Exists('..\models\PP-OCRv5_det.onnx')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\PP-OCRv5_det.onnx" />
+    <None Include="..\models\PP-OCRv5_rec.onnx" Condition="Exists('..\models\PP-OCRv5_rec.onnx')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\PP-OCRv5_rec.onnx" />
+    <None Include="..\models\ppocrv5_dict.txt" Condition="Exists('..\models\ppocrv5_dict.txt')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\ppocrv5_dict.txt" />
+  </ItemGroup>
+
 </Project>

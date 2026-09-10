@@ -14,6 +14,8 @@ See [README.zh-TW.md](README.zh-TW.md) for Traditional Chinese documentation.
 
 The repository does not store OCR binaries in Git. After independently verifying a permitted model source and license, run `scripts/install-ocr-models.ps1` with the source URLs and SHA-256 values. The script writes only verified files to `models/`; `scripts/publish-win-x64.ps1` refuses unresolved hashes or mismatched files before creating the self-contained ZIP.
 
+When launching the executable directly from `RankLens.App/bin/Release`, build after installing the model bundle; the project copies the verified model files beside the executable. For distribution, use the publish script so the same bundle is staged into the ZIP.
+
 ## Offline release verification
 
 The publish script emits `RankLens-win-x64.zip.sha256`. Verify the archive before extracting it (for example, with `Get-FileHash -Algorithm SHA256 RankLens-win-x64.zip`) and compare the result with that file. The ZIP is unsigned; Windows SmartScreen may show an “unknown publisher” warning. The project does not claim that the executable is code-signed.

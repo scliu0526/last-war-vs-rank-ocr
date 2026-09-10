@@ -10,6 +10,8 @@ RankLens 是非官方、離線執行的 Windows 桌面應用程式，用於校�
 
 英文主要文件：[README.md](README.md)。
 
+若直接執行 `RankLens.App/bin/Release` 下的程式，安裝模型後請重新 build；專案會將已驗證的模型複製到執行檔旁。要發布給其他電腦使用，請使用發布腳本，讓相同模型組被放入 ZIP。
+
 發佈腳本會產生 `RankLens-win-x64.zip.sha256`，解壓前請使用 `Get-FileHash -Algorithm SHA256 RankLens-win-x64.zip` 比對雜湊。ZIP 未經付費憑證簽章，Windows SmartScreen 可能顯示「未知的發行者」警告；本專案不宣稱程式已簽署。也可以執行 `scripts/verify-release.ps1 -Archive .\RankLens-win-x64.zip`，離線檢查雜湊、模型檔案及 manifest 的授權／雜湊狀態。
 
 ## 持續驗證
