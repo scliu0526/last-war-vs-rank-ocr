@@ -25,6 +25,7 @@ public sealed class OnnxOcrRecognitionSource(
                 image.Tensor.Dimensions[3], image.Tensor.Dimensions[2])
             .OrderBy(box => box.Top).ThenBy(box => box.Left)
             .ToArray();
+        var dataBoxes = boxes.Where(box => RankingRegionLayout.IsDataBox(box, image.OriginalWidth, image.OriginalHeight)).ToArray();
         var lines = new List<OcrTextLine>(boxes.Length);
         foreach (var box in boxes)
         {
@@ -35,13 +36,13 @@ public sealed class OnnxOcrRecognitionSource(
                 ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
             var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
             var confidence = Math.Min(box.Confidence, decoded.Confidence);
-            if (!string.IsNullOrWhiteSpace(decoded.Text)) lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)confidence, (int)box.Top, (int)box.Bottom, (int)box.Left));
+            if (!string.IsNullOrWhiteSpace(decoded.Text)) lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)confidence, (int)box.Top, (int)box.Bottom, (int)box.Left, (int)box.Right));
         }
 
         // The game uses a high-contrast outlined glyph for the rank column that
         // the detector can miss. Re-read only the left rank column for rows
         // that already have detected content; no rank is inferred if OCR fails.
-        foreach (var row in boxes.Where(box => box.Top > image.OriginalHeight * 0.2)
+        foreach (var row in dataBoxes.Where(box => box.Top > image.OriginalHeight * 0.2)
             .GroupBy(box => (int)Math.Round(box.Top / 70d)).Select(group => group.ToArray()))
         {
             var top = Math.Max(0, row.Min(box => box.Top) - 8);
@@ -53,12 +54,15 @@ public sealed class OnnxOcrRecognitionSource(
                 ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
             var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
             if (Regex.IsMatch(decoded.Text.Trim(), @"^\d{1,3}$"))
-                lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)decoded.Confidence, (int)top, (int)bottom, 0));
+                lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)decoded.Confidence, (int)top, (int)bottom, 0, (int)(image.OriginalWidth * 0.2f)));
         }
 
         var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
-        var candidates = OcrCandidateParser.ParseRows(category, path, lines, textConfidenceThreshold);
-        if (candidates.Count == 0) candidates = OcrCandidateParser.Parse(category, path, lines, textConfidenceThreshold);
+        var dataLines = lines.Where(line => RankingRegionLayout.IsDataBox(
+            new DetectionBox(line.Left, line.Top, line.Right > line.Left ? line.Right : line.Left + 1, line.Bottom, line.Confidence),
+            image.OriginalWidth, image.OriginalHeight)).ToArray();
+        var candidates = OcrCandidateParser.ParseRows(category, path, dataLines, textConfidenceThreshold);
+        if (candidates.Count == 0) candidates = OcrCandidateParser.Parse(category, path, dataLines, textConfidenceThreshold);
         foreach (var candidate in candidates) candidate.ClassificationResolved = category != RankingCategory.PendingClassification;
         return candidates;
     }

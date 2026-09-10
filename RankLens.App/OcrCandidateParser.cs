@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace RankLens.App;
 
-public sealed record OcrTextLine(string Text, float Confidence, int Top, int Bottom, int Left = 0);
+public sealed record OcrTextLine(string Text, float Confidence, int Top, int Bottom, int Left = 0, int Right = 0);
 
 public static partial class OcrCandidateParser
 {
