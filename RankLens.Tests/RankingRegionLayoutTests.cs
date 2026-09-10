@@ -30,4 +30,23 @@ public class RankingRegionLayoutTests
         Assert.False(RankingRegionLayout.IsRankingColumnBox(new DetectionBox(190, 450, 270, 520, .9f), 869, 1880));
         Assert.False(RankingRegionLayout.IsRankingColumnBox(new DetectionBox(40, 250, 150, 320, .9f), 869, 1880));
     }
+
+    [Fact]
+    public void GroupRowsKeepsTextLinesFromSameRankingCardTogether()
+    {
+        var boxes = new[]
+        {
+            new DetectionBox(265, 460, 451, 489, .9f),
+            new DetectionBox(637, 482, 840, 509, .9f),
+            new DetectionBox(226, 508, 661, 532, .9f),
+            new DetectionBox(265, 611, 441, 640, .9f),
+            new DetectionBox(642, 635, 837, 662, .9f),
+            new DetectionBox(252, 661, 505, 687, .9f)
+        };
+
+        var rows = RankingRegionLayout.GroupRows(boxes, 1880);
+
+        Assert.Equal(2, rows.Count);
+        Assert.All(rows, row => Assert.Equal(3, row.Count));
+    }
 }

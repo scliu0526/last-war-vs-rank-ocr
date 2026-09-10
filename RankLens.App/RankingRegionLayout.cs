@@ -29,4 +29,25 @@ public static class RankingRegionLayout
 
     public static bool IsScoreColumn(float centerX, int imageWidth) =>
         centerX / imageWidth is >= 0.73f and <= 0.98f;
+
+    public static IReadOnlyList<IReadOnlyList<DetectionBox>> GroupRows(
+        IEnumerable<DetectionBox> boxes, int imageHeight)
+    {
+        if (imageHeight <= 0) throw new ArgumentOutOfRangeException(nameof(imageHeight));
+        var maximumRowSpan = imageHeight * 0.045f;
+        var rows = new List<IReadOnlyList<DetectionBox>>();
+        List<DetectionBox>? current = null;
+        float rowTop = 0;
+        foreach (var box in boxes.OrderBy(box => box.Top).ThenBy(box => box.Left))
+        {
+            if (current is null || box.Top - rowTop > maximumRowSpan)
+            {
+                current = [];
+                rows.Add(current);
+                rowTop = box.Top;
+            }
+            current.Add(box);
+        }
+        return rows;
+    }
 }

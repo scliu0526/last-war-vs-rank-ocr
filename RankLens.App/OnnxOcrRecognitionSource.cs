@@ -26,6 +26,8 @@ public sealed class OnnxOcrRecognitionSource(
             .OrderBy(box => box.Top).ThenBy(box => box.Left)
             .ToArray();
         var dataBoxes = boxes.Where(box => RankingRegionLayout.IsDataBox(box, image.OriginalWidth, image.OriginalHeight)).ToArray();
+        var rankingColumnBoxes = dataBoxes.Where(box =>
+            RankingRegionLayout.IsRankingColumnBox(box, image.OriginalWidth, image.OriginalHeight)).ToArray();
         var lines = new List<OcrTextLine>(boxes.Length);
         foreach (var box in boxes)
         {
@@ -43,8 +45,8 @@ public sealed class OnnxOcrRecognitionSource(
         // the detector can miss. Re-read only the left rank column for rows
         // that already have detected content; no rank is inferred if OCR fails.
         var rowHeight = Math.Max(1d, image.OriginalHeight * 0.038d);
-        foreach (var row in dataBoxes.Where(box => box.Top > image.OriginalHeight * 0.2)
-            .GroupBy(box => (int)Math.Round(box.Top / rowHeight)).Select(group => group.ToArray()))
+        foreach (var row in RankingRegionLayout.GroupRows(
+            rankingColumnBoxes.Where(box => box.Top > image.OriginalHeight * 0.2), image.OriginalHeight))
         {
             var top = Math.Max(0, row.Min(box => box.Top) - 4);
             // Rank numerals occupy the upper portion of each annotated row;

@@ -45,7 +45,7 @@ public sealed class OcrRuntimeFactory
         return new OcrRuntime(
             new InferenceSession(modelPath, detectionOptions),
             new InferenceSession(recognitionPath, recognitionOptions),
-            File.ReadAllLines(dictionaryPath));
+            OcrCharacterDictionary.Load(dictionaryPath));
     }
 
     private static SessionOptions CreateSessionOptions(OcrRuntimeConfiguration configuration)
