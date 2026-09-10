@@ -42,8 +42,9 @@ public sealed class OnnxOcrRecognitionSource(
         // The game uses a high-contrast outlined glyph for the rank column that
         // the detector can miss. Re-read only the left rank column for rows
         // that already have detected content; no rank is inferred if OCR fails.
+        var rowHeight = Math.Max(1d, image.OriginalHeight * 0.038d);
         foreach (var row in dataBoxes.Where(box => box.Top > image.OriginalHeight * 0.2)
-            .GroupBy(box => (int)Math.Round(box.Top / 70d)).Select(group => group.ToArray()))
+            .GroupBy(box => (int)Math.Round(box.Top / rowHeight)).Select(group => group.ToArray()))
         {
             var top = Math.Max(0, row.Min(box => box.Top) - 8);
             var bottom = Math.Min(image.OriginalHeight, row.Max(box => box.Bottom) + 8);
@@ -71,7 +72,7 @@ public sealed class OnnxOcrRecognitionSource(
         }
 
         var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
-        var dataLines = lines.Where(line => RankingRegionLayout.IsDataBox(
+        var dataLines = lines.Where(line => RankingRegionLayout.IsRankingColumnBox(
             new DetectionBox(line.Left, line.Top, line.Right > line.Left ? line.Right : line.Left + 1, line.Bottom, line.Confidence),
             image.OriginalWidth, image.OriginalHeight)).ToArray();
         var candidates = OcrCandidateParser.ParseRows(category, path, dataLines, textConfidenceThreshold);

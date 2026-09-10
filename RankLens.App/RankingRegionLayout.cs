@@ -12,6 +12,15 @@ public static class RankingRegionLayout
             && centerX is >= 0.02f and <= 0.98f;
     }
 
+    public static bool IsRankingColumnBox(DetectionBox box, int imageWidth, int imageHeight)
+    {
+        if (!IsDataBox(box, imageWidth, imageHeight)) return false;
+        var centerX = (box.Left + box.Right) / 2;
+        return IsRankColumn(centerX, imageWidth)
+            || IsCommanderColumn(centerX, imageWidth)
+            || IsScoreColumn(centerX, imageWidth);
+    }
+
     public static bool IsRankColumn(float centerX, int imageWidth) =>
         centerX / imageWidth is >= 0.02f and <= 0.21f;
 
