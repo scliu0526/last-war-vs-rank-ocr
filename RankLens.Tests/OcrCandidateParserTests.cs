@@ -116,6 +116,18 @@ public class OcrCandidateParserTests
     }
 
     [Fact]
+    public void ParseRowsDoesNotTreatNumericCommanderNameAsScore()
+    {
+        var result = OcrCandidateParser.ParseRows(RankingCategory.Monday, "fixture.jpg", [
+            new OcrTextLine("1", .9f, 10, 20, 20, 100),
+            new OcrTextLine("Commander 123", .9f, 30, 40, 250, 500),
+            new OcrTextLine("Alliance", .9f, 45, 55, 250, 600)
+        ]);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
     public void ParseProvidedMondaySampleGroundTruth()
     {
         var result = OcrCandidateParser.ParsePlainText(RankingCategory.Monday, "288376_0.jpg", [

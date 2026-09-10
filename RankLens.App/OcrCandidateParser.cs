@@ -15,6 +15,9 @@ public static partial class OcrCandidateParser
         .Replace("\u202F", string.Empty, StringComparison.Ordinal);
 
     private static string DigitsOnly(string value) => new(value.Where(char.IsDigit).ToArray());
+    private static bool IsNumericLike(string value) =>
+        value.Any(char.IsDigit)
+        && value.All(character => char.IsDigit(character) || char.IsPunctuation(character) || char.IsWhiteSpace(character));
     public static RankingCategory DetectCategory(IEnumerable<string> lines)
     {
         var text = string.Join(" ", lines);
@@ -147,7 +150,7 @@ public static partial class OcrCandidateParser
 
             var scoreLine = group
                 .Select(line => (Line: line, Digits: DigitsOnly(line.Text)))
-                .Where(item => item.Digits.Length >= 3)
+                .Where(item => item.Digits.Length >= 3 && IsNumericLike(item.Line.Text))
                 .OrderByDescending(item => item.Digits.Length)
                 .FirstOrDefault();
             var scoreText = hasInlineScore ? match.Groups["score"].Value : scoreLine.Digits ?? string.Empty;
