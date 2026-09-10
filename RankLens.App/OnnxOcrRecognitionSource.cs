@@ -46,8 +46,11 @@ public sealed class OnnxOcrRecognitionSource(
         foreach (var row in dataBoxes.Where(box => box.Top > image.OriginalHeight * 0.2)
             .GroupBy(box => (int)Math.Round(box.Top / rowHeight)).Select(group => group.ToArray()))
         {
-            var top = Math.Max(0, row.Min(box => box.Top) - 8);
-            var bottom = Math.Min(image.OriginalHeight, row.Max(box => box.Bottom) + 8);
+            var top = Math.Max(0, row.Min(box => box.Top) - 4);
+            // Rank numerals occupy the upper portion of each annotated row;
+            // excluding the lower commander/alliance line prevents its digits
+            // from influencing the rank recognition.
+            var bottom = Math.Min(image.OriginalHeight, top + (int)Math.Round(rowHeight * 0.90));
             // The purple ranking region contains a medal/icon to the left of the
             // numeral. Try several numeral bands so both one-digit and multi-digit
             // ranks can be read without allowing artwork into the crop.
