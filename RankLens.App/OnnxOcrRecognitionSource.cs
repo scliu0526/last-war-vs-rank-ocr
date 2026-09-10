@@ -48,18 +48,26 @@ public sealed class OnnxOcrRecognitionSource(
             var top = Math.Max(0, row.Min(box => box.Top) - 8);
             var bottom = Math.Min(image.OriginalHeight, row.Max(box => box.Bottom) + 8);
             // The purple ranking region contains a medal/icon to the left of the
-            // numeral. Crop the numeral band only so recognition is not dominated
-            // by the artwork.
-            var rankBox = new DetectionBox(image.OriginalWidth * 0.06f, top,
-                Math.Min(image.OriginalWidth * 0.19f, 180), bottom, 1);
-            var crop = OcrImagePreprocessor.CropAndResize(image, rankBox);
-            var outputs = await Task.Run(() => runtime.RunRecognition(crop), cancellationToken);
-            var recognition = outputs.FirstOrDefault(IsSequenceTensor)
-                ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
-            var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
-            if (Regex.IsMatch(decoded.Text.Trim(), @"^\d{1,3}$"))
-                lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)decoded.Confidence, (int)top, (int)bottom,
-                    (int)(image.OriginalWidth * 0.06f), (int)(image.OriginalWidth * 0.19f)));
+            // numeral. Try several numeral bands so both one-digit and multi-digit
+            // ranks can be read without allowing artwork into the crop.
+            var rankReads = new List<(CtcDecoder.DecodedText Decoded, float Left, float Right)>();
+            foreach (var (leftRatio, rightRatio) in new[] { (0.06f, 0.19f), (0.09f, 0.18f), (0.11f, 0.16f) })
+            {
+                var rankBox = new DetectionBox(image.OriginalWidth * leftRatio, top,
+                    Math.Min(image.OriginalWidth * rightRatio, 180), bottom, 1);
+                var crop = OcrImagePreprocessor.CropAndResize(image, rankBox);
+                var outputs = await Task.Run(() => runtime.RunRecognition(crop), cancellationToken);
+                var recognition = outputs.FirstOrDefault(IsSequenceTensor)
+                    ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
+                var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
+                if (Regex.IsMatch(decoded.Text.Trim(), @"^\d{1,3}$"))
+                    rankReads.Add((decoded, leftRatio, rightRatio));
+            }
+
+            var bestRank = rankReads.OrderByDescending(read => read.Decoded.Confidence).FirstOrDefault();
+            if (bestRank.Decoded is not null)
+                lines.Add(new OcrTextLine(bestRank.Decoded.Text.Trim(), (float)bestRank.Decoded.Confidence, (int)top, (int)bottom,
+                    (int)(image.OriginalWidth * bestRank.Left), (int)(image.OriginalWidth * bestRank.Right)));
         }
 
         var category = OcrCandidateParser.DetectCategory(lines.Select(line => line.Text));
