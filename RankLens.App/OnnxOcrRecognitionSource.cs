@@ -52,7 +52,10 @@ public sealed class OnnxOcrRecognitionSource(
             // numeral. Try several numeral bands so both one-digit and multi-digit
             // ranks can be read without allowing artwork into the crop.
             var rankReads = new List<(CtcDecoder.DecodedText Decoded, float Left, float Right)>();
-            foreach (var (leftRatio, rightRatio) in new[] { (0.06f, 0.19f), (0.09f, 0.18f), (0.11f, 0.16f) })
+            // The annotated numeral band is the most reliable crop. Keep it
+            // first so a wider crop cannot replace a correct read with a
+            // higher-confidence medal/artwork read.
+            foreach (var (leftRatio, rightRatio) in new[] { (0.11f, 0.16f), (0.09f, 0.18f), (0.06f, 0.19f) })
             {
                 var rankBox = new DetectionBox(image.OriginalWidth * leftRatio, top,
                     Math.Min(image.OriginalWidth * rightRatio, 180), bottom, 1);
@@ -61,11 +64,14 @@ public sealed class OnnxOcrRecognitionSource(
                 var recognition = outputs.FirstOrDefault(IsSequenceTensor)
                     ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
                 var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
-                if (Regex.IsMatch(decoded.Text.Trim(), @"^\d{1,3}$"))
-                    rankReads.Add((decoded, leftRatio, rightRatio));
+                var rankDigits = new string(decoded.Text.Where(char.IsDigit).ToArray());
+                var rankTextIsNumeric = decoded.Text.Trim().All(character =>
+                    char.IsDigit(character) || char.IsPunctuation(character) || char.IsWhiteSpace(character));
+                if (rankTextIsNumeric && rankDigits.Length is >= 1 and <= 3)
+                    rankReads.Add((decoded with { Text = rankDigits }, leftRatio, rightRatio));
             }
 
-            var bestRank = rankReads.OrderByDescending(read => read.Decoded.Confidence).FirstOrDefault();
+            var bestRank = rankReads.FirstOrDefault();
             if (bestRank.Decoded is not null)
                 lines.Add(new OcrTextLine(bestRank.Decoded.Text.Trim(), (float)bestRank.Decoded.Confidence, (int)top, (int)bottom,
                     (int)(image.OriginalWidth * bestRank.Left), (int)(image.OriginalWidth * bestRank.Right)));

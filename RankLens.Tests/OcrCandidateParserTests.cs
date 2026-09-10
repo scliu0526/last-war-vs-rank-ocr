@@ -102,6 +102,20 @@ public class OcrCandidateParserTests
     }
 
     [Fact]
+    public void ParseRowsAcceptsPunctuationInsertedInsideOcrScore()
+    {
+        var result = OcrCandidateParser.ParseRows(RankingCategory.Monday, "fixture.jpg", [
+            new OcrTextLine("1", .9f, 10, 20, 20, 100),
+            new OcrTextLine("GBgogogo", .9f, 30, 40, 250, 500),
+            new OcrTextLine("[TFIP] 965熟成魚中心", .9f, 45, 55, 250, 600),
+            new OcrTextLine("'7''2'','1''3''8'','5''6''9'", .9f, 30, 55, 650, 840)
+        ]);
+
+        var candidate = Assert.Single(result);
+        Assert.Equal(72138569, candidate.Score);
+    }
+
+    [Fact]
     public void ParseProvidedMondaySampleGroundTruth()
     {
         var result = OcrCandidateParser.ParsePlainText(RankingCategory.Monday, "288376_0.jpg", [

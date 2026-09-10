@@ -146,11 +146,11 @@ public static partial class OcrCandidateParser
             }
 
             var scoreLine = group
-                .Select(line => (Line: line, Match: Regex.Match(line.Text, @"[\d][\d,，\s]*")))
-                .Where(item => item.Match.Success)
-                .OrderByDescending(item => NormalizeScore(item.Match.Value).Length)
+                .Select(line => (Line: line, Digits: DigitsOnly(line.Text)))
+                .Where(item => item.Digits.Length >= 3)
+                .OrderByDescending(item => item.Digits.Length)
                 .FirstOrDefault();
-            var scoreText = hasInlineScore ? match.Groups["score"].Value : scoreLine.Match?.Value ?? string.Empty;
+            var scoreText = hasInlineScore ? match.Groups["score"].Value : scoreLine.Digits ?? string.Empty;
             var textLines = group.Where(line => !ReferenceEquals(line, scoreLine.Line)
                 && !Regex.IsMatch(line.Text, @"^\s*[\d,，\s]+\s*$"))
                 .Select(line => line.Text.Trim()).Where(text => text.Length > 0).ToArray();
