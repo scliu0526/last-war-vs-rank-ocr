@@ -63,7 +63,7 @@ public class OcrModelStoreTests
             var manifest = new OcrModelStore().LoadManifest(path);
 
             var variant = Assert.Single(manifest.RecognitionVariants);
-            Assert.Equal("korean", variant.Language);
+            Assert.Equal(OcrRecognitionLanguage.Korean, variant.Language);
             Assert.Equal("ko.onnx", variant.RecognitionModel);
         }
         finally { File.Delete(path); }

@@ -1,0 +1,42 @@
+using RankLens.App;
+
+namespace RankLens.Tests;
+
+public sealed class OcrLanguageCandidateSelectorTests
+{
+    [Fact]
+    public void SelectsConfidentMixedKoreanCandidateWithoutRatioGate()
+    {
+        var primary = new CtcDecoder.DecodedText("pin", 0.80);
+        var mixed = new CtcDecoder.DecodedText("그린핀 pin", 0.78);
+
+        var selected = OcrLanguageCandidateSelector.Select(primary,
+            [new OcrLanguageCandidate(OcrRecognitionLanguage.Korean, mixed)]);
+
+        Assert.Equal(mixed, selected);
+    }
+
+    [Fact]
+    public void KeepsPrimaryWhenTargetScriptCandidateHasWeakEvidence()
+    {
+        var primary = new CtcDecoder.DecodedText("GBgogogo", 0.95);
+        var hallucination = new CtcDecoder.DecodedText("ีGBgogogo", 0.70);
+
+        var selected = OcrLanguageCandidateSelector.Select(primary,
+            [new OcrLanguageCandidate(OcrRecognitionLanguage.Thai, hallucination)]);
+
+        Assert.Equal(primary, selected);
+    }
+
+    [Fact]
+    public void PreservesLeadingAndTrailingPunctuation()
+    {
+        var primary = new CtcDecoder.DecodedText("name", 0.50);
+        var quoted = new CtcDecoder.DecodedText("'김'", 0.95);
+
+        var selected = OcrLanguageCandidateSelector.Select(primary,
+            [new OcrLanguageCandidate(OcrRecognitionLanguage.Korean, quoted)]);
+
+        Assert.Equal("'김'", selected.Text);
+    }
+}

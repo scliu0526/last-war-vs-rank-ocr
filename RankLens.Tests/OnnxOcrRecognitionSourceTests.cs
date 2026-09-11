@@ -67,29 +67,6 @@ public class OnnxOcrRecognitionSourceTests
         finally { File.Delete(path); }
     }
 
-    [Theory]
-    [InlineData("김강민아빠", "korean", true)]
-    [InlineData("ภาษาไทย", "thai", true)]
-    [InlineData("GBgogogo", "korean", false)]
-    [InlineData("[rock] BAND", "thai", false)]
-    public void DetectsOnlyTheRequestedLanguageScript(string text, string language, bool expected)
-    {
-        Assert.Equal(expected, OnnxOcrRecognitionSource.ContainsTargetScript(text, language));
-    }
-
-    [Theory]
-    [InlineData("김강민아빠", "korean", true)]
-    [InlineData("김스풍스R", "korean", true)]
-    [InlineData("그린핀 pin", "korean", true)]
-    [InlineData("ีGBgogogo", "thai", false)]
-    [InlineData("ปายณpin", "thai", false)]
-    [InlineData("ก-ฮร", "thai", false)]
-    [InlineData("ภาษาไทย", "thai", true)]
-    public void RequiresAStrongTargetScriptMajority(string text, string language, bool expected)
-    {
-        Assert.Equal(expected, OnnxOcrRecognitionSource.HasStrongTargetScript(text, language));
-    }
-
     private static OcrTensorOutput MakeRecognition(IReadOnlyList<string> dictionary, string text)
     {
         var symbols = new List<int>();

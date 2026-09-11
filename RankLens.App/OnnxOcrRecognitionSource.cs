@@ -119,22 +119,16 @@ public sealed class OnnxOcrRecognitionSource(
         CtcDecoder.DecodedText primary,
         CancellationToken cancellationToken)
     {
-        var selected = primary;
-        var selectedVariant = false;
+        var candidates = new List<OcrLanguageCandidate>();
         foreach (var variant in runtime.RecognitionVariants)
         {
             var outputs = await Task.Run(() => variant.RunRecognition(crop), cancellationToken);
             var recognition = outputs.FirstOrDefault(IsSequenceTensor)
                 ?? throw new InvalidDataException("語言 Recognition 模型沒有 [1,time,classes] 輸出。");
             var candidate = OcrRecognitionDecoder.DecodeWithConfidence(recognition, variant.Dictionary);
-            if (HasStrongTargetScript(candidate.Text, variant.Language)
-                && (!selectedVariant || candidate.Confidence > selected.Confidence))
-            {
-                selected = candidate with { Text = candidate.Text.Trim('“', '”', '"', '\'', '`', ' ') };
-                selectedVariant = true;
-            }
+            candidates.Add(new OcrLanguageCandidate(variant.Language, candidate));
         }
-        return selected;
+        return OcrLanguageCandidateSelector.Select(primary, candidates);
     }
 
     private async Task<CtcDecoder.DecodedText> RecognizePrimaryAsync(
@@ -151,8 +145,8 @@ public sealed class OnnxOcrRecognitionSource(
         CtcDecoder.DecodedText original,
         CtcDecoder.DecodedText expanded)
     {
-        var originalTarget = runtime.RecognitionVariants.Any(variant => HasStrongTargetScript(original.Text, variant.Language));
-        var expandedTarget = runtime.RecognitionVariants.Any(variant => HasStrongTargetScript(expanded.Text, variant.Language));
+        var originalTarget = runtime.RecognitionVariants.Any(variant => OcrLanguageCandidateSelector.ContainsTargetScript(original.Text, variant.Language));
+        var expandedTarget = runtime.RecognitionVariants.Any(variant => OcrLanguageCandidateSelector.ContainsTargetScript(expanded.Text, variant.Language));
         if (expandedTarget != originalTarget) return expandedTarget ? expanded : original;
         if (expandedTarget) return expanded.Confidence > original.Confidence ? expanded : original;
         var originalLetters = original.Text.Count(char.IsLetterOrDigit);
@@ -160,29 +154,6 @@ public sealed class OnnxOcrRecognitionSource(
         return (original.Text.Contains('\uFFFD') || originalLetters <= 2) && expandedLetters > originalLetters
             ? expanded
             : original;
-    }
-
-    public static bool ContainsTargetScript(string text, string language) => language switch
-    {
-        "korean" => text.Any(character => character is >= '\u1100' and <= '\u11FF'
-            or >= '\u3130' and <= '\u318F' or >= '\uAC00' and <= '\uD7AF'),
-        "thai" => text.Any(character => character is >= '\u0E00' and <= '\u0E7F'),
-        _ => false
-    };
-
-    public static bool HasStrongTargetScript(string text, string language)
-    {
-        var letters = text.Count(char.IsLetter);
-        var target = language switch
-        {
-            "korean" => text.Count(character => character is >= '\u1100' and <= '\u11FF'
-                or >= '\u3130' and <= '\u318F' or >= '\uAC00' and <= '\uD7AF'),
-            "thai" => text.Count(character => character is >= '\u0E00' and <= '\u0E7F'),
-            _ => 0
-        };
-        var minimumTargetCharacters = language == "thai" ? 4 : 2;
-        var minimumRatio = language == "korean" ? 0.45 : 0.75;
-        return target >= minimumTargetCharacters && letters > 0 && target / (double)letters >= minimumRatio;
     }
 
     private static DetectionBox ExpandWithinAnnotatedColumn(DetectionBox box, int imageWidth, int imageHeight)

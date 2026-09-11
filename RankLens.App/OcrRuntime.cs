@@ -1,6 +1,7 @@
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using System.IO;
+using System.Text.Json.Serialization;
 using Windows.Graphics.Imaging;
 using Windows.Media.Ocr;
 using Windows.Storage;
@@ -26,7 +27,7 @@ public sealed record OcrModelManifest(
 }
 
 public sealed record OcrRecognitionVariantManifest(
-    string Language,
+    OcrRecognitionLanguage Language,
     string RecognitionModel,
     string CharacterDictionary,
     string RecognitionSha256,
@@ -34,6 +35,13 @@ public sealed record OcrRecognitionVariantManifest(
     string SourceRevision,
     string RecognitionSourceUrl,
     string DictionarySourceUrl);
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum OcrRecognitionLanguage
+{
+    Korean,
+    Thai
+}
 
 public sealed record OcrRuntimeConfiguration(
     RecognitionExecutionMode Mode,
@@ -84,17 +92,17 @@ public interface IOcrInferenceRuntime : IDisposable
 
 public interface IOcrRecognitionRuntime : IDisposable
 {
-    string Language { get; }
+    OcrRecognitionLanguage Language { get; }
     IReadOnlyList<string> Dictionary { get; }
     IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor);
 }
 
 public sealed class OcrRecognitionRuntime(
-    string language,
+    OcrRecognitionLanguage language,
     InferenceSession recognition,
     IReadOnlyList<string> dictionary) : IOcrRecognitionRuntime
 {
-    public string Language { get; } = language;
+    public OcrRecognitionLanguage Language { get; } = language;
     public IReadOnlyList<string> Dictionary { get; } = dictionary;
 
     public IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor)

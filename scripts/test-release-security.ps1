@@ -71,8 +71,12 @@ try {
         "microsoft.ml.onnxruntime-1.24.1",
         "microsoft.ml.onnxruntime.managed-1.24.1",
         "microsoft.ml.onnxruntime.directml-1.24.1",
-        "system.management-9.0.9",
-        "system.numerics.tensors-9.0.0"
+        "system.numerics.tensors-9.0.0",
+        "vortice.dxgi-3.8.3",
+        "vortice.directx-3.8.3",
+        "vortice.mathematics-2.1.0",
+        "sharpgen.runtime-2.4.2-beta",
+        "sharpgen.runtime.com-2.4.2-beta"
     )) {
         $packagePath = Join-Path $licenses $package
         New-Item -ItemType Directory -Path $packagePath -Force | Out-Null

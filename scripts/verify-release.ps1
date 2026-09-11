@@ -35,8 +35,12 @@ try {
         @{ Id = "microsoft.ml.onnxruntime"; Version = "1.24.1" },
         @{ Id = "microsoft.ml.onnxruntime.managed"; Version = "1.24.1" },
         @{ Id = "microsoft.ml.onnxruntime.directml"; Version = "1.24.1" },
-        @{ Id = "system.management"; Version = "9.0.9" },
-        @{ Id = "system.numerics.tensors"; Version = "9.0.0" }
+        @{ Id = "system.numerics.tensors"; Version = "9.0.0" },
+        @{ Id = "vortice.dxgi"; Version = "3.8.3" },
+        @{ Id = "vortice.directx"; Version = "3.8.3" },
+        @{ Id = "vortice.mathematics"; Version = "2.1.0" },
+        @{ Id = "sharpgen.runtime"; Version = "2.4.2-beta" },
+        @{ Id = "sharpgen.runtime.com"; Version = "2.4.2-beta" }
     )) {
         $prefix = "licenses/$($package.Id)-$($package.Version)/"
         if (@($entryNames | Where-Object { $_.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) -and $_ -notmatch '/$' }).Count -eq 0) {

@@ -19,6 +19,11 @@ if (([string]::IsNullOrWhiteSpace($ModelVersion)) -or ($ModelVersion -match "PEN
 }
 $modelDir = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")) "models"
 New-Item -ItemType Directory -Path $modelDir -Force | Out-Null
+$manifestPath = Join-Path $modelDir "manifest.json"
+$recognitionVariants = @()
+if (Test-Path -LiteralPath $manifestPath) {
+    $recognitionVariants = @((Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json).recognitionVariants)
+}
 
 function Download-Verified([string]$url, [string]$name, [string]$hash) {
     $uri = [Uri]$url
@@ -44,6 +49,13 @@ foreach ($hash in @($DetectionSha256, $RecognitionSha256, $DictionarySha256)) {
 Download-Verified $DetectionUrl "PP-OCRv5_det.onnx" $DetectionSha256
 Download-Verified $RecognitionUrl "PP-OCRv5_rec.onnx" $RecognitionSha256
 Download-Verified $DictionaryUrl "ppocrv5_dict.txt" $DictionarySha256
+foreach ($variant in $recognitionVariants) {
+    if ($variant.language -notin @("korean", "thai") -or [string]::IsNullOrWhiteSpace($variant.sourceRevision)) {
+        throw "Existing manifest contains an unsupported recognition variant."
+    }
+    Download-Verified $variant.recognitionSourceUrl $variant.recognitionModel $variant.recognitionSha256
+    Download-Verified $variant.dictionarySourceUrl $variant.characterDictionary $variant.characterDictionarySha256
+}
 
 $manifest = [ordered]@{
     detectionModel = "PP-OCRv5_det.onnx"
@@ -58,6 +70,7 @@ $manifest = [ordered]@{
     detectionSha256 = $DetectionSha256.ToUpperInvariant()
     recognitionSha256 = $RecognitionSha256.ToUpperInvariant()
     characterDictionarySha256 = $DictionarySha256.ToUpperInvariant()
+    recognitionVariants = $recognitionVariants
 }
-$manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $modelDir "manifest.json")
+$manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath
 Write-Host "OCR models downloaded, verified, and manifest.json generated in $modelDir."

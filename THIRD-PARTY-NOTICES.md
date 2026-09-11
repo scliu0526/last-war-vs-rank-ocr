@@ -12,8 +12,12 @@ This notice covers the package versions resolved by the current `project.assets.
 | Microsoft.ML.OnnxRuntime.Managed | 1.24.1 | MIT; package `LICENSE.txt` and `ThirdPartyNotices.txt`; source: <https://github.com/microsoft/onnxruntime> |
 | Microsoft.ML.OnnxRuntime.DirectML | 1.24.1 | MIT for the ONNX Runtime component; retain the package `LICENSE` and `ThirdPartyNotices.txt` |
 | Microsoft.AI.DirectML | 1.15.4 | Microsoft DirectML Software License Terms; retain the package `LICENSE.txt`, `LICENSE-CODE.txt`, and `ThirdPartyNotices.txt`; source: <https://aka.ms/DirectML> |
-| System.Management | 9.0.9 | MIT; package `LICENSE.TXT` and `THIRD-PARTY-NOTICES.TXT`; source: <https://dot.net/> |
 | System.Numerics.Tensors | 9.0.0 | MIT; package `LICENSE.TXT` and `THIRD-PARTY-NOTICES.TXT`; source: <https://dot.net/> |
+| Vortice.DXGI | 3.8.3 | MIT; source: <https://github.com/amerkoleci/Vortice.Windows> |
+| Vortice.DirectX | 3.8.3 | MIT; source: <https://github.com/amerkoleci/Vortice.Windows> |
+| Vortice.Mathematics | 2.1.0 | MIT; source: <https://github.com/amerkoleci/Vortice.Mathematics> |
+| SharpGen.Runtime | 2.4.2-beta | MIT; source: <https://github.com/SharpGenTools/SharpGenTools> |
+| SharpGen.Runtime.COM | 2.4.2-beta | MIT; source: <https://github.com/SharpGenTools/SharpGenTools> |
 
 ## Development and test dependencies
 

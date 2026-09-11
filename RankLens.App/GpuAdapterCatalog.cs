@@ -1,4 +1,5 @@
-using System.Management;
+using Vortice.DXGI;
+using static Vortice.DXGI.DXGI;
 
 namespace RankLens.App;
 
@@ -10,15 +11,16 @@ public sealed class GpuAdapterCatalog
     public IReadOnlyList<GpuAdapterInfo> Enumerate()
     {
         var result = new List<GpuAdapterInfo>();
-        using var query = new ManagementObjectSearcher("SELECT Name, Status FROM Win32_VideoController");
-        var deviceId = 0;
-        foreach (ManagementObject item in query.Get())
+        using var factory = CreateDXGIFactory1<IDXGIFactory1>();
+        for (uint deviceId = 0; ; deviceId++)
         {
-            var name = item["Name"]?.ToString();
-            var status = item["Status"]?.ToString();
-            if (!string.IsNullOrWhiteSpace(name))
+            var adapterResult = factory.EnumAdapters1(deviceId, out var adapter);
+            if (adapterResult.Failure || adapter is null) break;
+            using (adapter)
             {
-                result.Add(new GpuAdapterInfo(deviceId++, name, string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase)));
+                var description = adapter.Description1;
+                var isHardware = !description.Flags.HasFlag(AdapterFlags.Software);
+                result.Add(new GpuAdapterInfo((int)deviceId, description.Description.TrimEnd('\0'), isHardware));
             }
         }
 

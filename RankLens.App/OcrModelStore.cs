@@ -37,7 +37,7 @@ public sealed class OcrModelStore
 
     private static void ValidateVariantProvenance(OcrRecognitionVariantManifest variant)
     {
-        if (variant.Language is not ("korean" or "thai") || string.IsNullOrWhiteSpace(variant.SourceRevision))
+        if (!Enum.IsDefined(variant.Language) || string.IsNullOrWhiteSpace(variant.SourceRevision))
             throw new InvalidOperationException("OCR 語言模型來源資訊無效。");
         foreach (var source in new[] { variant.RecognitionSourceUrl, variant.DictionarySourceUrl })
         {
