@@ -18,9 +18,54 @@ public class ImageInputDiscoveryTests
                 throw new InvalidDataException("圖片無法讀取");
             }
 
+            return Task.FromResult<IReadOnlyList<RankingCandidate>>([CreateCandidate(imagePaths[0])]);
+        }
+    }
+
+    private sealed class ShapeOnlyRecognitionSource : IRecognitionSource
+    {
+        public Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
+            IReadOnlyList<string> imagePaths,
+            CancellationToken cancellationToken = default)
+        {
+            ScreenshotInputValidator.ValidatePortrait(imagePaths[0]);
             return Task.FromResult<IReadOnlyList<RankingCandidate>>([]);
         }
     }
+
+    private sealed class TrackingRecognitionSource : IRecognitionSource
+    {
+        private int inFlight;
+        public int MaximumInFlight { get; private set; }
+
+        public async Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
+            IReadOnlyList<string> imagePaths,
+            CancellationToken cancellationToken = default)
+        {
+            var current = Interlocked.Increment(ref inFlight);
+            MaximumInFlight = Math.Max(MaximumInFlight, current);
+            try
+            {
+                await Task.Yield();
+                cancellationToken.ThrowIfCancellationRequested();
+                return [CreateCandidate(imagePaths[0])];
+            }
+            finally
+            {
+                Interlocked.Decrement(ref inFlight);
+            }
+        }
+    }
+
+    private static RankingCandidate CreateCandidate(string sourceImage) => new()
+    {
+        Category = RankingCategory.Monday,
+        Rank = 1,
+        CommanderName = "Commander",
+        AllianceName = "Alliance",
+        Score = 1,
+        SourceImage = sourceImage
+    };
 
     [Fact]
     public void FolderDiscoveryIsNonRecursiveAndFiltersSupportedExtensions()
@@ -36,7 +81,10 @@ public class ImageInputDiscoveryTests
         {
             var result = ImageInputDiscovery.Discover([], folder);
             Assert.Equal(2, result.Accepted.Count);
-            Assert.Single(result.Rejected);
+            var rejected = Assert.Single(result.Rejected);
+            Assert.Equal(Path.Combine(folder, "notes.txt"), rejected.Path);
+            Assert.Contains("不支援", rejected.Error);
+            Assert.Contains("notes.txt", ImageFailureText.Format(result.Rejected));
             Assert.DoesNotContain(result.Accepted, path => path.Contains("nested", StringComparison.OrdinalIgnoreCase));
         }
         finally
@@ -81,14 +129,41 @@ public class ImageInputDiscoveryTests
     }
 
     [Fact]
-    public async Task OneHundredImageBatchCompletesWithMonotonicProgress()
+    public async Task SameAspectRatioImageWithoutRankingRowsIsReportedAsUnsupported()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ranklens-{Guid.NewGuid():N}.png");
+        try
+        {
+            var pixels = new byte[460 * 1000 * 4];
+            var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(
+                460, 1000, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, pixels, 460 * 4);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+            using (var stream = File.Create(path)) encoder.Save(stream);
+
+            var result = Assert.Single(await new BatchRecognitionProcessor().ProcessAsync(
+                [path], new ShapeOnlyRecognitionSource()));
+
+            Assert.Null(result.Candidates);
+            Assert.Contains("完整排名列", result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task OneHundredImageBatchKeepsOneImageInFlightAndReportsMonotonicProgress()
     {
         var progress = new List<int>();
         var paths = Enumerable.Range(1, 100).Select(index => $"{index}.jpg").ToArray();
+        var source = new TrackingRecognitionSource();
         var results = await new BatchRecognitionProcessor().ProcessAsync(
-            paths, new FakeRecognitionSource(), new RecordingProgress(progress));
+            paths, source, new RecordingProgress(progress));
 
         Assert.Equal(100, results.Count);
+        Assert.Equal(1, source.MaximumInFlight);
         Assert.Equal(100, progress[^1]);
         Assert.True(progress.Zip(progress.Skip(1), (before, after) => after >= before).All(value => value));
     }

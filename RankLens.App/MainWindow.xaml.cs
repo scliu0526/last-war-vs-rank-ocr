@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private string[] selectedImages = [];
     private CancellationTokenSource? batchCancellation;
     private bool hasUnsavedReview;
+    private int lastRecognitionFailureCount;
     private readonly AppSettingsStore settingsStore = new();
     private readonly AppSettings settings;
     private readonly IReadOnlyList<GpuAdapterInfo> gpuAdapters;
@@ -116,6 +117,7 @@ public partial class MainWindow : Window
                 if (result.Rejected.Count > 0)
                 {
                     BatchStatus.Text = $"已選取 {result.Accepted.Count} 張，略過 {result.Rejected.Count} 個不支援檔案";
+                    ShowBatchFailures(result.Rejected);
                 }
             }
             catch (InvalidOperationException exception)
@@ -128,7 +130,10 @@ public partial class MainWindow : Window
     private void SetSelectedImages(IEnumerable<string> paths, string? folder)
     {
         selectedImages = paths.ToArray();
+        lastRecognitionFailureCount = 0;
         BatchProgress.Value = 0;
+        BatchFailureDetails.Text = string.Empty;
+        BatchFailureDetails.Visibility = Visibility.Collapsed;
         BatchStatus.Text = folder is null
             ? $"已選取 {selectedImages.Length} 張截圖"
             : $"已選取資料夾內 {selectedImages.Length} 張截圖";
@@ -186,11 +191,21 @@ public partial class MainWindow : Window
             CandidateSelectionPolicy.Apply(Candidates, settings.ConfidenceThreshold);
             hasUnsavedReview = Candidates.Count > 0;
 
-            var failures = results.Count(item => item.Error is not null);
-            BatchStatus.Text = failures == 0
+            var failures = results
+                .Where(item => item.Error is not null)
+                .Select(item => new ImageInputFailure(item.Path, item.Error!))
+                .ToArray();
+            lastRecognitionFailureCount = failures.Length;
+            if (failures.Length > 0) ShowBatchFailures(failures);
+            else
+            {
+                BatchFailureDetails.Text = string.Empty;
+                BatchFailureDetails.Visibility = Visibility.Collapsed;
+            }
+            BatchStatus.Text = failures.Length == 0
                 ? $"辨識完成，共 {Candidates.Count} 筆候選，{reconciliation.Conflicts.Count} 個衝突，{reconciliation.NameCollisions.Count} 個名稱碰撞"
-                : $"辨識完成，共 {Candidates.Count} 筆候選，{failures} 張失敗，{reconciliation.Conflicts.Count} 個衝突";
-            new LocalLog(settings).WriteStage("Info", "Recognition", $"Images={results.Count} Candidates={Candidates.Count} Failures={failures} Conflicts={reconciliation.Conflicts.Count} Collisions={reconciliation.NameCollisions.Count}.", Stopwatch.GetElapsedTime(recognitionStarted));
+                : $"辨識完成，共 {Candidates.Count} 筆候選，{failures.Length} 張失敗，{reconciliation.Conflicts.Count} 個衝突";
+            new LocalLog(settings).WriteStage("Info", "Recognition", $"Images={results.Count} Candidates={Candidates.Count} Failures={failures.Length} Conflicts={reconciliation.Conflicts.Count} Collisions={reconciliation.NameCollisions.Count}.", Stopwatch.GetElapsedTime(recognitionStarted));
         }
         catch (OperationCanceledException)
         {
@@ -221,6 +236,12 @@ public partial class MainWindow : Window
         var adapterId = new GpuAdapterCatalog().Enumerate()
             .FirstOrDefault(adapter => string.Equals(adapter.Name, currentSettings.AdapterName, StringComparison.Ordinal))?.DeviceId ?? 0;
         return new OcrRuntimeFactory().Create(new OcrRuntimeConfiguration(currentSettings.ExecutionMode, adapterId, modelDirectory), manifest);
+    }
+
+    private void ShowBatchFailures(IEnumerable<ImageInputFailure> failures)
+    {
+        BatchFailureDetails.Text = ImageFailureText.Format(failures);
+        BatchFailureDetails.Visibility = Visibility.Visible;
     }
 
     private void ChooseOutputFolderClick(object sender, RoutedEventArgs e)
@@ -350,6 +371,7 @@ public partial class MainWindow : Window
     {
         if (e.Row.Item is RankingCandidate candidate)
         {
+            hasUnsavedReview = true;
             var header = e.Column.Header?.ToString();
             if (string.Equals(header, "分類", StringComparison.Ordinal))
             {
@@ -370,6 +392,7 @@ public partial class MainWindow : Window
         {
             candidate.IsSelected = checkBox.IsChecked == true;
             CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate], settings.ConfidenceThreshold);
+            hasUnsavedReview = true;
             CandidatesGrid.Items.Refresh();
         }
     }
@@ -380,6 +403,7 @@ public partial class MainWindow : Window
         {
             candidate.NoAllianceConfirmed = checkBox.IsChecked == true;
             CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate], settings.ConfidenceThreshold);
+            hasUnsavedReview = true;
             CandidatesGrid.Items.Refresh();
         }
     }
@@ -389,6 +413,7 @@ public partial class MainWindow : Window
         if (SelectedCandidate is { } candidate)
         {
             CandidateSelectionPolicy.Apply([candidate], settings.ConfidenceThreshold);
+            hasUnsavedReview = true;
             CandidatesGrid.Items.Refresh();
         }
     }
@@ -400,12 +425,14 @@ public partial class MainWindow : Window
         {
             MessageBox.Show("名次必須介於 1 到 200。", "名次錯誤", MessageBoxButton.OK, MessageBoxImage.Warning);
             candidate.IsSelected = false;
+            hasUnsavedReview = true;
             CandidatesGrid.Items.Refresh();
             return;
         }
         var group = Candidates.Where(item => item.Category == candidate.Category
             && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
         CandidateReconciler.ResolveNameCollision(group, NameCollisionResolution.MoveRank, candidate.Rank, candidate);
+        hasUnsavedReview = true;
         CandidatesGrid.Items.Refresh();
     }
 
@@ -424,6 +451,7 @@ public partial class MainWindow : Window
                     && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
                 CandidateReconciler.ResolveNameCollision(collision, NameCollisionResolution.KeepBoth, selected: candidate);
             }
+            hasUnsavedReview = true;
             CandidatesGrid.Items.Refresh();
         }
     }
@@ -443,6 +471,7 @@ public partial class MainWindow : Window
                     && string.Equals(item.CommanderName, candidate.CommanderName, StringComparison.Ordinal)).ToArray();
                 CandidateReconciler.ResolveNameCollision(collision, NameCollisionResolution.IgnoreNew, selected: candidate);
             }
+            hasUnsavedReview = true;
             CandidatesGrid.Items.Refresh();
         }
     }
@@ -474,7 +503,7 @@ public partial class MainWindow : Window
         try
         {
             summary = new RankLensWorkflow(new RankingWorkbookWriter())
-                .WriteConfirmed(folder, new ReviewSession(week, Candidates));
+                .WriteConfirmed(folder, new ReviewSession(week, Candidates), lastRecognitionFailureCount);
         }
         catch (IOException exception)
         {
@@ -489,8 +518,8 @@ public partial class MainWindow : Window
             return;
         }
         hasUnsavedReview = false;
-        new LocalLog(settings).WriteStage("Info", "WorkbookWrite", $"Updated={summary.Updated} Skipped={summary.Skipped}.", Stopwatch.GetElapsedTime(workbookStarted));
-        var openFolder = MessageBox.Show($"已更新 {summary.Updated} 筆，略過 {summary.Skipped} 筆。\n檔案：{summary.Path}\n是否開啟輸出資料夾？", "完成", MessageBoxButton.YesNo, MessageBoxImage.Information);
+        new LocalLog(settings).WriteStage("Info", "WorkbookWrite", $"Updated={summary.Updated} Skipped={summary.Skipped} Failed={summary.Failed}.", Stopwatch.GetElapsedTime(workbookStarted));
+        var openFolder = MessageBox.Show($"已更新 {summary.Updated} 筆，略過 {summary.Skipped} 筆，失敗 {summary.Failed} 張。\n檔案：{summary.Path}\n是否開啟輸出資料夾？", "完成", MessageBoxButton.YesNo, MessageBoxImage.Information);
         if (openFolder == MessageBoxResult.Yes)
         {
             Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{Path.Combine(folder, week.FileName)}\"") { UseShellExecute = true });

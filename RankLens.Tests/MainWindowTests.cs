@@ -95,6 +95,8 @@ public class MainWindowTests
                 grid.ScrollIntoView(candidate);
                 grid.UpdateLayout();
                 var candidateRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromItem(candidate)!;
+                var dirtyField = typeof(MainWindow).GetField("hasUnsavedReview", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                dirtyField.SetValue(window, false);
                 var editArgs = new DataGridCellEditEndingEventArgs(
                     grid.Columns[3], candidateRow, new TextBox(), DataGridEditAction.Commit);
                 typeof(MainWindow).GetMethod("CandidateCellEditEnding", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
@@ -103,8 +105,13 @@ public class MainWindowTests
                 {
                     throw new InvalidOperationException("Editing another cell reset the user's manual confirmation.");
                 }
+                if (dirtyField.GetValue(window) is not true)
+                {
+                    throw new InvalidOperationException("Editing after a saved state did not restore the unsaved-review flag.");
+                }
 
                 candidate.IsSelected = false;
+                dirtyField.SetValue(window, false);
                 var selectionCheckBox = new CheckBox { DataContext = candidate, IsChecked = true };
                 typeof(MainWindow).GetMethod("CandidateSelectionCheckBoxClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(window, [selectionCheckBox, new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)]);
@@ -113,6 +120,10 @@ public class MainWindowTests
                 if (!candidate.IsSelected)
                 {
                     throw new InvalidOperationException("Checking a previously unchecked candidate was lost after leaving the cell.");
+                }
+                if (dirtyField.GetValue(window) is not true)
+                {
+                    throw new InvalidOperationException("Checking after a saved state did not restore the unsaved-review flag.");
                 }
 
                 grid.ScrollIntoView(candidate);
@@ -277,6 +288,7 @@ public class MainWindowTests
                     throw new InvalidOperationException("Name-collision move button did not keep the explicitly moved candidate.");
                 }
                 Directory.Delete(folder, true);
+                dirtyField.SetValue(window, false);
                 window.Close();
                 application.Shutdown();
             }

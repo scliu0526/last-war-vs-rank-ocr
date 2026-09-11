@@ -86,8 +86,9 @@ public class RankLensWorkflowTests
 
         try
         {
-            var summary = workflow.WriteConfirmed(folder, session);
+            var summary = workflow.WriteConfirmed(folder, session, failed: 2);
             Assert.Equal(1, summary.Updated);
+            Assert.Equal(2, summary.Failed);
             Assert.True(File.Exists(path));
 
             using var document = SpreadsheetDocument.Open(path, false);
@@ -280,6 +281,7 @@ public class RankLensWorkflowTests
             }]);
             var summary = new RankLensWorkflow(new RankingWorkbookWriter()).WriteConfirmed(folder, session);
             Assert.Equal(0, summary.Updated);
+            Assert.Equal(0, summary.Failed);
             Assert.False(File.Exists(path));
         }
         finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }

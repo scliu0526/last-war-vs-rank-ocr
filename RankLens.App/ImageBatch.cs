@@ -2,8 +2,16 @@ using System.IO;
 
 namespace RankLens.App;
 
-public sealed record ImageBatchResult(IReadOnlyList<string> Accepted, IReadOnlyList<string> Rejected);
+public sealed record ImageInputFailure(string Path, string Error);
+public sealed record ImageBatchResult(IReadOnlyList<string> Accepted, IReadOnlyList<ImageInputFailure> Rejected);
 public sealed record ImageProcessingResult(string Path, IReadOnlyList<RankingCandidate>? Candidates, string? Error);
+
+public static class ImageFailureText
+{
+    public static string Format(IEnumerable<ImageInputFailure> failures) => string.Join(
+        Environment.NewLine,
+        failures.Select(failure => $"{failure.Path}：{failure.Error}"));
+}
 
 public static class ImageInputDiscovery
 {
@@ -27,7 +35,10 @@ public static class ImageInputDiscovery
             throw new InvalidOperationException($"每批最多處理 {maximum} 張圖片。");
         }
 
-        var rejected = candidates.Where(path => !Extensions.Contains(Path.GetExtension(path))).ToList();
+        var rejected = candidates
+            .Where(path => !Extensions.Contains(Path.GetExtension(path)))
+            .Select(path => new ImageInputFailure(path, "不支援的檔案格式"))
+            .ToList();
         return new ImageBatchResult(accepted, rejected);
     }
 }
@@ -48,7 +59,9 @@ public sealed class BatchRecognitionProcessor
             try
             {
                 var candidates = await recognitionSource.RecognizeAsync([path], cancellationToken);
-                results.Add(new ImageProcessingResult(path, candidates, null));
+                results.Add(candidates.Count == 0
+                    ? new ImageProcessingResult(path, null, "未偵測到完整排名列或支援的排名頁面")
+                    : new ImageProcessingResult(path, candidates, null));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
