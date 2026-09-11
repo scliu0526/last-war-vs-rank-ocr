@@ -96,6 +96,17 @@ public static class CandidateSelectionPolicy
                 && candidate.ScoreConfidence >= threshold;
         }
     }
+
+    public static void RevalidateWithoutResettingUserChoice(
+        IReadOnlyList<RankingCandidate> candidates,
+        double threshold = 0.95)
+    {
+        foreach (var candidate in candidates)
+        {
+            candidate.SelectionThreshold = threshold;
+            if (!candidate.IsValid) candidate.IsSelected = false;
+        }
+    }
 }
 
 public static class ReviewUiPolicy

@@ -77,7 +77,9 @@ public class MainWindowTests
                     Score = 1,
                     SourceImage = imagePath,
                     SourceTop = 10,
-                    SourceBottom = 30
+                    SourceBottom = 30,
+                    CommanderConfidence = 0,
+                    IsSelected = true
                 };
                 window.Candidates.Add(candidate);
                 var grid = (DataGrid)window.FindName("CandidatesGrid")!;
@@ -89,6 +91,18 @@ public class MainWindowTests
                 highlightTop = Canvas.GetTop(highlight);
                 highlightHeight = highlight.Height;
                 sourceLabel = ((TextBlock)window.FindName("SourceImageLabel")!).Text;
+
+                grid.ScrollIntoView(candidate);
+                grid.UpdateLayout();
+                var candidateRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromItem(candidate)!;
+                var editArgs = new DataGridCellEditEndingEventArgs(
+                    grid.Columns[3], candidateRow, new TextBox(), DataGridEditAction.Commit);
+                typeof(MainWindow).GetMethod("CandidateCellEditEnding", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [grid, editArgs]);
+                if (!candidate.IsSelected)
+                {
+                    throw new InvalidOperationException("Editing another cell reset the user's manual confirmation.");
+                }
 
                 var switchCandidate = new RankingCandidate
                 {

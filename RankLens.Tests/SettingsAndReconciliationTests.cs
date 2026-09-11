@@ -120,6 +120,24 @@ public class SettingsAndReconciliationTests
     }
 
     [Fact]
+    public void RevalidationPreservesManualChoiceUnlessCandidateBecomesInvalid()
+    {
+        var candidate = new RankingCandidate
+        {
+            Category = RankingCategory.Monday, Rank = 1, CommanderName = "Commander",
+            AllianceName = "Alliance", Score = 10, CommanderConfidence = 0,
+            IsSelected = true
+        };
+
+        CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate]);
+        Assert.True(candidate.IsSelected);
+
+        candidate.CommanderName = string.Empty;
+        CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate]);
+        Assert.False(candidate.IsSelected);
+    }
+
+    [Fact]
     public void ExplicitNoAllianceConfirmationAllowsAutomaticSelection()
     {
         var candidate = new RankingCandidate

@@ -353,12 +353,12 @@ public partial class MainWindow : Window
             if (string.Equals(e.Column.Header?.ToString(), "分類", StringComparison.Ordinal))
             {
                 var related = CandidateReconciler.ApplyCategoryToSource(Candidates, candidate.SourceImage, candidate.Category);
-                CandidateSelectionPolicy.Apply(related, settings.ConfidenceThreshold);
+                CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice(related, settings.ConfidenceThreshold);
             }
             else
             {
                 candidate.ClassificationResolved = candidate.Category != RankingCategory.PendingClassification;
-                CandidateSelectionPolicy.Apply([candidate], settings.ConfidenceThreshold);
+                CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate], settings.ConfidenceThreshold);
             }
         }
     }
