@@ -15,4 +15,19 @@ public sealed class OcrCharacterDictionaryTests
     {
         Assert.Equal(expected, OcrCharacterDictionary.NormalizeEntry(input));
     }
+
+    [Fact]
+    public void LoadReadsOnlyYamlCharacterDictionaryAndAddsCtcBlank()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ranklens-dict-{Guid.NewGuid():N}.yml");
+        try
+        {
+            File.WriteAllText(path, "PostProcess:\n  name: CTCLabelDecode\n  character_dict:\n  - '!'\n  - ''''\n  - 김\nOther:\n  value: ignored\n");
+
+            var dictionary = OcrCharacterDictionary.Load(path);
+
+            Assert.Equal(["", "!", "'", "김", " "], dictionary);
+        }
+        finally { File.Delete(path); }
+    }
 }

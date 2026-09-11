@@ -27,6 +27,10 @@
     <None Include="..\models\PP-OCRv5_det.onnx" Condition="Exists('..\models\PP-OCRv5_det.onnx')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\PP-OCRv5_det.onnx" />
     <None Include="..\models\PP-OCRv5_rec.onnx" Condition="Exists('..\models\PP-OCRv5_rec.onnx')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\PP-OCRv5_rec.onnx" />
     <None Include="..\models\ppocrv5_dict.txt" Condition="Exists('..\models\ppocrv5_dict.txt')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\ppocrv5_dict.txt" />
+    <None Include="..\models\korean_PP-OCRv5_rec.onnx" Condition="Exists('..\models\korean_PP-OCRv5_rec.onnx')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\korean_PP-OCRv5_rec.onnx" />
+    <None Include="..\models\korean_PP-OCRv5_rec.yml" Condition="Exists('..\models\korean_PP-OCRv5_rec.yml')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\korean_PP-OCRv5_rec.yml" />
+    <None Include="..\models\th_PP-OCRv5_rec.onnx" Condition="Exists('..\models\th_PP-OCRv5_rec.onnx')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\th_PP-OCRv5_rec.onnx" />
+    <None Include="..\models\th_PP-OCRv5_rec.yml" Condition="Exists('..\models\th_PP-OCRv5_rec.yml')" CopyToOutputDirectory="PreserveNewest" TargetPath="models\th_PP-OCRv5_rec.yml" />
   </ItemGroup>
 
 </Project>

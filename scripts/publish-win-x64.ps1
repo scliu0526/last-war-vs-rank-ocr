@@ -27,11 +27,23 @@ foreach ($sourceUrl in @($manifestJson.detectionSourceUrl, $manifestJson.recogni
     $parsedUrl = $null
     if (-not [Uri]::TryCreate($sourceUrl, [UriKind]::Absolute, [ref]$parsedUrl) -or $parsedUrl.Scheme -ne "https") { throw "Model provenance URLs must use HTTPS absolute URLs." }
 }
-foreach ($entry in @(
+$modelEntries = @(
     @{ Name = $manifestJson.detectionModel; Hash = $manifestJson.detectionSha256 },
     @{ Name = $manifestJson.recognitionModel; Hash = $manifestJson.recognitionSha256 },
     @{ Name = $manifestJson.characterDictionary; Hash = $manifestJson.characterDictionarySha256 }
-)) {
+)
+foreach ($variant in @($manifestJson.recognitionVariants)) {
+    if ($variant.language -notin @("korean", "thai") -or [string]::IsNullOrWhiteSpace($variant.sourceRevision)) {
+        throw "Recognition variant provenance is invalid."
+    }
+    foreach ($sourceUrl in @($variant.recognitionSourceUrl, $variant.dictionarySourceUrl)) {
+        $parsedUrl = $null
+        if (-not [Uri]::TryCreate($sourceUrl, [UriKind]::Absolute, [ref]$parsedUrl) -or $parsedUrl.Scheme -ne "https") { throw "Recognition variant provenance URLs must use HTTPS absolute URLs." }
+    }
+    $modelEntries += @{ Name = $variant.recognitionModel; Hash = $variant.recognitionSha256 }
+    $modelEntries += @{ Name = $variant.characterDictionary; Hash = $variant.characterDictionarySha256 }
+}
+foreach ($entry in $modelEntries) {
     if ([string]::IsNullOrWhiteSpace($entry.Hash) -or $entry.Hash -notmatch '^[0-9A-Fa-f]{64}$') {
         throw "Manifest hash is not a canonical SHA-256 value: $($entry.Name)"
     }
@@ -48,7 +60,7 @@ dotnet publish (Join-Path $repo "RankLens.App\RankLens.App.csproj") `
 
 $publishedModels = Join-Path $out "models"
 New-Item -ItemType Directory -Path $publishedModels -Force | Out-Null
-foreach ($modelFile in @($manifestJson.detectionModel, $manifestJson.recognitionModel, $manifestJson.characterDictionary, "manifest.json", "README.md")) {
+foreach ($modelFile in @($modelEntries.Name) + @("manifest.json", "README.md")) {
     Copy-Item (Join-Path $repo "models\$modelFile") (Join-Path $publishedModels $modelFile) -Force
 }
 foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md")) {

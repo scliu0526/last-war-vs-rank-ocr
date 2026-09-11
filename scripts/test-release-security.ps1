@@ -19,6 +19,10 @@ try {
         "PP-OCRv5_det.onnx" = [byte[]](1, 2, 3)
         "PP-OCRv5_rec.onnx" = [byte[]](4, 5, 6)
         "ppocrv5_dict.txt" = [Text.Encoding]::UTF8.GetBytes("a`nb`n")
+        "korean_PP-OCRv5_rec.onnx" = [byte[]](7, 8, 9)
+        "korean_PP-OCRv5_rec.yml" = [Text.Encoding]::UTF8.GetBytes("character_dict:`n  - 김`n")
+        "th_PP-OCRv5_rec.onnx" = [byte[]](10, 11, 12)
+        "th_PP-OCRv5_rec.yml" = [Text.Encoding]::UTF8.GetBytes("character_dict:`n  - ก`n")
     }
     foreach ($item in $modelData.GetEnumerator()) {
         [IO.File]::WriteAllBytes((Join-Path $models $item.Key), $item.Value)
@@ -36,6 +40,28 @@ try {
         detectionSha256 = (Get-FileHash -Algorithm SHA256 (Join-Path $models "PP-OCRv5_det.onnx")).Hash
         recognitionSha256 = (Get-FileHash -Algorithm SHA256 (Join-Path $models "PP-OCRv5_rec.onnx")).Hash
         characterDictionarySha256 = (Get-FileHash -Algorithm SHA256 (Join-Path $models "ppocrv5_dict.txt")).Hash
+        recognitionVariants = @(
+            @{
+                language = "korean"
+                recognitionModel = "korean_PP-OCRv5_rec.onnx"
+                characterDictionary = "korean_PP-OCRv5_rec.yml"
+                recognitionSha256 = (Get-FileHash -Algorithm SHA256 (Join-Path $models "korean_PP-OCRv5_rec.onnx")).Hash
+                characterDictionarySha256 = (Get-FileHash -Algorithm SHA256 (Join-Path $models "korean_PP-OCRv5_rec.yml")).Hash
+                sourceRevision = "synthetic-test"
+                recognitionSourceUrl = "https://example.invalid/korean"
+                dictionarySourceUrl = "https://example.invalid/korean-yml"
+            },
+            @{
+                language = "thai"
+                recognitionModel = "th_PP-OCRv5_rec.onnx"
+                characterDictionary = "th_PP-OCRv5_rec.yml"
+                recognitionSha256 = (Get-FileHash -Algorithm SHA256 (Join-Path $models "th_PP-OCRv5_rec.onnx")).Hash
+                characterDictionarySha256 = (Get-FileHash -Algorithm SHA256 (Join-Path $models "th_PP-OCRv5_rec.yml")).Hash
+                sourceRevision = "synthetic-test"
+                recognitionSourceUrl = "https://example.invalid/thai"
+                dictionarySourceUrl = "https://example.invalid/thai-yml"
+            }
+        )
     }
     $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $models "manifest.json")
     foreach ($package in @(

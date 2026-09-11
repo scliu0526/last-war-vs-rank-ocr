@@ -15,7 +15,7 @@ if (-not [string]::Equals($actual, $expected, [StringComparison]::OrdinalIgnoreC
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
 try {
-    $required = @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md", "licenses/paddleocr-models/NOTICE.md", "models/manifest.json", "models/PP-OCRv5_det.onnx", "models/PP-OCRv5_rec.onnx", "models/ppocrv5_dict.txt")
+    $required = @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md", "licenses/paddleocr-models/NOTICE.md", "models/manifest.json", "models/PP-OCRv5_det.onnx", "models/PP-OCRv5_rec.onnx", "models/ppocrv5_dict.txt", "models/korean_PP-OCRv5_rec.onnx", "models/korean_PP-OCRv5_rec.yml", "models/th_PP-OCRv5_rec.onnx", "models/th_PP-OCRv5_rec.yml")
     $entryNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in $zip.Entries) { [void]$entryNames.Add($entry.FullName.Replace('\', '/')) }
     $forbiddenEntries = @($entryNames | Where-Object {
@@ -25,7 +25,7 @@ try {
         throw "Release archive contains private screenshot/image content: $($forbiddenEntries[0])"
     }
     foreach ($name in $required) { if (-not $entryNames.Contains($name)) { throw "Release archive is missing $name" } }
-    $allowedModelEntries = @("models/manifest.json", "models/README.md", "models/PP-OCRv5_det.onnx", "models/PP-OCRv5_rec.onnx", "models/ppocrv5_dict.txt")
+    $allowedModelEntries = @("models/manifest.json", "models/README.md", "models/PP-OCRv5_det.onnx", "models/PP-OCRv5_rec.onnx", "models/ppocrv5_dict.txt", "models/korean_PP-OCRv5_rec.onnx", "models/korean_PP-OCRv5_rec.yml", "models/th_PP-OCRv5_rec.onnx", "models/th_PP-OCRv5_rec.yml")
     $unexpectedModelEntries = @($entryNames | Where-Object { $_.StartsWith("models/", [StringComparison]::OrdinalIgnoreCase) -and $_ -notin $allowedModelEntries })
     if ($unexpectedModelEntries.Count -gt 0) { throw "Release archive contains an unexpected model/staging entry: $($unexpectedModelEntries[0])" }
     foreach ($package in @(
@@ -62,6 +62,15 @@ try {
         @{ Name = $manifest.recognitionModel; Hash = $manifest.recognitionSha256 },
         @{ Name = $manifest.characterDictionary; Hash = $manifest.characterDictionarySha256 }
     )
+    foreach ($variant in @($manifest.recognitionVariants)) {
+        if ($variant.language -notin @("korean", "thai") -or [string]::IsNullOrWhiteSpace($variant.sourceRevision)) { throw "Release manifest recognition variant provenance is invalid." }
+        foreach ($sourceUrl in @($variant.recognitionSourceUrl, $variant.dictionarySourceUrl)) {
+            $parsedUrl = $null
+            if (-not [Uri]::TryCreate($sourceUrl, [UriKind]::Absolute, [ref]$parsedUrl) -or $parsedUrl.Scheme -ne "https") { throw "Release manifest recognition variant URLs must use HTTPS absolute URLs." }
+        }
+        $modelEntries += @{ Name = $variant.recognitionModel; Hash = $variant.recognitionSha256 }
+        $modelEntries += @{ Name = $variant.characterDictionary; Hash = $variant.characterDictionarySha256 }
+    }
     foreach ($model in $modelEntries) {
         $entry = $zip.GetEntry("models/$($model.Name)")
         if ($null -eq $entry) { throw "Release archive is missing manifest model $($model.Name)" }

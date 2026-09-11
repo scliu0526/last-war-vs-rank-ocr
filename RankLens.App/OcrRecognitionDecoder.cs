@@ -13,7 +13,7 @@ public static class OcrRecognitionDecoder
         if (dimensions[1] <= 0 || dimensions[2] <= 1 || dimensions[1] > int.MaxValue / dimensions[2]
             || output.Values.Length != dimensions[1] * dimensions[2]
             || dictionary.Count < dimensions[2])
-            throw new InvalidDataException("Recognition 模型輸出長度或字典大小與 shape 不一致。");
+            throw new InvalidDataException($"Recognition 模型輸出長度或字典大小與 shape 不一致（classes={dimensions.ElementAtOrDefault(2)}，dictionary={dictionary.Count}）。");
         var timesteps = new List<IReadOnlyList<float>>(dimensions[1]);
         for (var time = 0; time < dimensions[1]; time++)
         {
@@ -32,7 +32,7 @@ public static class OcrRecognitionDecoder
         if (dimensions[1] <= 0 || dimensions[2] <= 1 || dimensions[1] > int.MaxValue / dimensions[2]
             || output.Values.Length != dimensions[1] * dimensions[2]
             || dictionary.Count < dimensions[2])
-            throw new InvalidDataException("Recognition 模型輸出長度或字典大小與 shape 不一致。");
+            throw new InvalidDataException($"Recognition 模型輸出長度或字典大小與 shape 不一致（classes={dimensions.ElementAtOrDefault(2)}，dictionary={dictionary.Count}）。");
         var timesteps = new List<IReadOnlyList<float>>(dimensions[1]);
         for (var time = 0; time < dimensions[1]; time++)
         {

@@ -1,3 +1,4 @@
+using Microsoft.ML.OnnxRuntime.Tensors;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -33,10 +34,25 @@ public sealed class OnnxOcrRecognitionSource(
         {
             cancellationToken.ThrowIfCancellationRequested();
             var crop = OcrImagePreprocessor.CropAndResize(image, box);
-            var outputs = await Task.Run(() => runtime.RunRecognition(crop), cancellationToken);
-            var recognition = outputs.FirstOrDefault(IsSequenceTensor)
-                ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
-            var decoded = OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
+            var decoded = await RecognizePrimaryAsync(crop, cancellationToken);
+            var centerX = (box.Left + box.Right) / 2;
+            if (RankingRegionLayout.IsCommanderColumn(centerX, image.OriginalWidth))
+            {
+                decoded = await SelectLanguageRecognitionAsync(crop, decoded, cancellationToken);
+                var expandedCrop = OcrImagePreprocessor.CropAndResize(image,
+                    ExpandWithinAnnotatedColumn(box, image.OriginalWidth, image.OriginalHeight));
+                var expanded = await SelectLanguageRecognitionAsync(expandedCrop,
+                    await RecognizePrimaryAsync(expandedCrop, cancellationToken), cancellationToken);
+                decoded = SelectCommanderRecognition(decoded, expanded);
+            }
+            else if (RankingRegionLayout.IsScoreColumn(centerX, image.OriginalWidth)
+                && decoded.Text.Count(char.IsDigit) < 8)
+            {
+                var expandedCrop = OcrImagePreprocessor.CropAndResize(image,
+                    ExpandWithinAnnotatedColumn(box, image.OriginalWidth, image.OriginalHeight));
+                var expanded = await RecognizePrimaryAsync(expandedCrop, cancellationToken);
+                if (expanded.Text.Count(char.IsDigit) > decoded.Text.Count(char.IsDigit)) decoded = expanded;
+            }
             var confidence = Math.Min(box.Confidence, decoded.Confidence);
             if (!string.IsNullOrWhiteSpace(decoded.Text)) lines.Add(new OcrTextLine(decoded.Text.Trim(), (float)confidence, (int)box.Top, (int)box.Bottom, (int)box.Left, (int)box.Right));
         }
@@ -97,4 +113,88 @@ public sealed class OnnxOcrRecognitionSource(
 
     private static bool IsSequenceTensor(OcrTensorOutput output) =>
         output.Dimensions is [1, _, _];
+
+    private async Task<CtcDecoder.DecodedText> SelectLanguageRecognitionAsync(
+        DenseTensor<float> crop,
+        CtcDecoder.DecodedText primary,
+        CancellationToken cancellationToken)
+    {
+        var selected = primary;
+        var selectedVariant = false;
+        foreach (var variant in runtime.RecognitionVariants)
+        {
+            var outputs = await Task.Run(() => variant.RunRecognition(crop), cancellationToken);
+            var recognition = outputs.FirstOrDefault(IsSequenceTensor)
+                ?? throw new InvalidDataException("語言 Recognition 模型沒有 [1,time,classes] 輸出。");
+            var candidate = OcrRecognitionDecoder.DecodeWithConfidence(recognition, variant.Dictionary);
+            if (HasStrongTargetScript(candidate.Text, variant.Language)
+                && (!selectedVariant || candidate.Confidence > selected.Confidence))
+            {
+                selected = candidate with { Text = candidate.Text.Trim('“', '”', '"', '\'', '`', ' ') };
+                selectedVariant = true;
+            }
+        }
+        return selected;
+    }
+
+    private async Task<CtcDecoder.DecodedText> RecognizePrimaryAsync(
+        DenseTensor<float> crop,
+        CancellationToken cancellationToken)
+    {
+        var outputs = await Task.Run(() => runtime.RunRecognition(crop), cancellationToken);
+        var recognition = outputs.FirstOrDefault(IsSequenceTensor)
+            ?? throw new InvalidDataException("Recognition 模型沒有 [1,time,classes] 輸出。");
+        return OcrRecognitionDecoder.DecodeWithConfidence(recognition, runtime.Dictionary);
+    }
+
+    private CtcDecoder.DecodedText SelectCommanderRecognition(
+        CtcDecoder.DecodedText original,
+        CtcDecoder.DecodedText expanded)
+    {
+        var originalTarget = runtime.RecognitionVariants.Any(variant => HasStrongTargetScript(original.Text, variant.Language));
+        var expandedTarget = runtime.RecognitionVariants.Any(variant => HasStrongTargetScript(expanded.Text, variant.Language));
+        if (expandedTarget != originalTarget) return expandedTarget ? expanded : original;
+        if (expandedTarget) return expanded.Confidence > original.Confidence ? expanded : original;
+        var originalLetters = original.Text.Count(char.IsLetterOrDigit);
+        var expandedLetters = expanded.Text.Count(char.IsLetterOrDigit);
+        return (original.Text.Contains('\uFFFD') || originalLetters <= 2) && expandedLetters > originalLetters
+            ? expanded
+            : original;
+    }
+
+    public static bool ContainsTargetScript(string text, string language) => language switch
+    {
+        "korean" => text.Any(character => character is >= '\u1100' and <= '\u11FF'
+            or >= '\u3130' and <= '\u318F' or >= '\uAC00' and <= '\uD7AF'),
+        "thai" => text.Any(character => character is >= '\u0E00' and <= '\u0E7F'),
+        _ => false
+    };
+
+    public static bool HasStrongTargetScript(string text, string language)
+    {
+        var letters = text.Count(char.IsLetter);
+        var target = language switch
+        {
+            "korean" => text.Count(character => character is >= '\u1100' and <= '\u11FF'
+                or >= '\u3130' and <= '\u318F' or >= '\uAC00' and <= '\uD7AF'),
+            "thai" => text.Count(character => character is >= '\u0E00' and <= '\u0E7F'),
+            _ => 0
+        };
+        var minimumTargetCharacters = language == "thai" ? 4 : 2;
+        var minimumRatio = language == "korean" ? 0.45 : 0.75;
+        return target >= minimumTargetCharacters && letters > 0 && target / (double)letters >= minimumRatio;
+    }
+
+    private static DetectionBox ExpandWithinAnnotatedColumn(DetectionBox box, int imageWidth, int imageHeight)
+    {
+        var centerX = (box.Left + box.Right) / 2;
+        var verticalPadding = imageHeight * 0.003f;
+        if (RankingRegionLayout.IsCommanderColumn(centerX, imageWidth))
+            return new DetectionBox(imageWidth * 0.32f, Math.Max(0, box.Top - verticalPadding),
+                Math.Min(imageWidth * 0.73f, box.Right + imageWidth * 0.02f), Math.Min(imageHeight, box.Bottom + verticalPadding), box.Confidence);
+        if (RankingRegionLayout.IsScoreColumn(centerX, imageWidth))
+            return new DetectionBox(Math.Max(imageWidth * 0.73f, box.Left - imageWidth * 0.02f), Math.Max(0, box.Top - verticalPadding),
+                Math.Min(imageWidth * 0.98f, box.Right + imageWidth * 0.02f), Math.Min(imageHeight, box.Bottom + verticalPadding), box.Confidence);
+        return box;
+    }
 }

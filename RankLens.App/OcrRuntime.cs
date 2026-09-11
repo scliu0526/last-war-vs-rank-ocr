@@ -20,7 +20,20 @@ public sealed record OcrModelManifest(
     string SourceRevision = "",
     string DetectionSourceUrl = "",
     string RecognitionSourceUrl = "",
-    string DictionarySourceUrl = "");
+    string DictionarySourceUrl = "")
+{
+    public IReadOnlyList<OcrRecognitionVariantManifest> RecognitionVariants { get; init; } = [];
+}
+
+public sealed record OcrRecognitionVariantManifest(
+    string Language,
+    string RecognitionModel,
+    string CharacterDictionary,
+    string RecognitionSha256,
+    string CharacterDictionarySha256,
+    string SourceRevision,
+    string RecognitionSourceUrl,
+    string DictionarySourceUrl);
 
 public sealed record OcrRuntimeConfiguration(
     RecognitionExecutionMode Mode,
@@ -42,10 +55,15 @@ public sealed class OcrRuntimeFactory
 
         var detectionOptions = CreateSessionOptions(configuration);
         var recognitionOptions = CreateSessionOptions(configuration);
+        var variants = manifest.RecognitionVariants.Select(variant => new OcrRecognitionRuntime(
+            variant.Language,
+            new InferenceSession(Path.Combine(configuration.ModelDirectory, variant.RecognitionModel), CreateSessionOptions(configuration)),
+            OcrCharacterDictionary.Load(Path.Combine(configuration.ModelDirectory, variant.CharacterDictionary)))).ToArray();
         return new OcrRuntime(
             new InferenceSession(modelPath, detectionOptions),
             new InferenceSession(recognitionPath, recognitionOptions),
-            OcrCharacterDictionary.Load(dictionaryPath));
+            OcrCharacterDictionary.Load(dictionaryPath),
+            variants);
     }
 
     private static SessionOptions CreateSessionOptions(OcrRuntimeConfiguration configuration)
@@ -61,13 +79,44 @@ public interface IOcrInferenceRuntime : IDisposable
     IReadOnlyList<OcrTensorOutput> RunDetection(DenseTensor<float> imageTensor);
     IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor);
     IReadOnlyList<string> Dictionary { get; }
+    IReadOnlyList<IOcrRecognitionRuntime> RecognitionVariants => [];
 }
 
-public sealed class OcrRuntime(InferenceSession detection, InferenceSession recognition, IReadOnlyList<string> dictionary) : IOcrInferenceRuntime
+public interface IOcrRecognitionRuntime : IDisposable
+{
+    string Language { get; }
+    IReadOnlyList<string> Dictionary { get; }
+    IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor);
+}
+
+public sealed class OcrRecognitionRuntime(
+    string language,
+    InferenceSession recognition,
+    IReadOnlyList<string> dictionary) : IOcrRecognitionRuntime
+{
+    public string Language { get; } = language;
+    public IReadOnlyList<string> Dictionary { get; } = dictionary;
+
+    public IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor)
+    {
+        var input = recognition.InputMetadata.Keys.First();
+        using var outputs = recognition.Run(new[] { NamedOnnxValue.CreateFromTensor(input, imageTensor) });
+        return OcrOutputReader.Read(outputs);
+    }
+
+    public void Dispose() => recognition.Dispose();
+}
+
+public sealed class OcrRuntime(
+    InferenceSession detection,
+    InferenceSession recognition,
+    IReadOnlyList<string> dictionary,
+    IReadOnlyList<IOcrRecognitionRuntime>? recognitionVariants = null) : IOcrInferenceRuntime
 {
     public InferenceSession Detection { get; } = detection;
     public InferenceSession Recognition { get; } = recognition;
     public IReadOnlyList<string> Dictionary { get; } = dictionary;
+    public IReadOnlyList<IOcrRecognitionRuntime> RecognitionVariants { get; } = recognitionVariants ?? [];
 
     public IReadOnlyList<OcrTensorOutput> RunDetection(DenseTensor<float> imageTensor)
     {
@@ -87,6 +136,7 @@ public sealed class OcrRuntime(InferenceSession detection, InferenceSession reco
     {
         Detection.Dispose();
         Recognition.Dispose();
+        foreach (var variant in RecognitionVariants) variant.Dispose();
     }
 }
 

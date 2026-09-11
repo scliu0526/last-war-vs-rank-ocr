@@ -51,4 +51,21 @@ public class OcrModelStoreTests
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
+
+    [Fact]
+    public void LoadManifestReadsLanguageRecognitionVariants()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ranklens-manifest-{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(path, "{\"detectionModel\":\"det.onnx\",\"recognitionModel\":\"rec.onnx\",\"characterDictionary\":\"dict.txt\",\"license\":\"MIT\",\"detectionSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"recognitionSha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"recognitionVariants\":[{\"language\":\"korean\",\"recognitionModel\":\"ko.onnx\",\"characterDictionary\":\"ko.yml\",\"recognitionSha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"characterDictionarySha256\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"sourceRevision\":\"rev\",\"recognitionSourceUrl\":\"https://example.test/ko\",\"dictionarySourceUrl\":\"https://example.test/ko-yml\"}]}");
+
+            var manifest = new OcrModelStore().LoadManifest(path);
+
+            var variant = Assert.Single(manifest.RecognitionVariants);
+            Assert.Equal("korean", variant.Language);
+            Assert.Equal("ko.onnx", variant.RecognitionModel);
+        }
+        finally { File.Delete(path); }
+    }
 }

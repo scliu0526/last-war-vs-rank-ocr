@@ -27,6 +27,23 @@ public sealed class OcrModelStore
         ValidateFile(manifest.DetectionModel, manifest.DetectionSha256, modelDirectory);
         ValidateFile(manifest.RecognitionModel, manifest.RecognitionSha256, modelDirectory);
         ValidateFile(manifest.CharacterDictionary, manifest.CharacterDictionarySha256, modelDirectory);
+        foreach (var variant in manifest.RecognitionVariants)
+        {
+            ValidateVariantProvenance(variant);
+            ValidateFile(variant.RecognitionModel, variant.RecognitionSha256, modelDirectory);
+            ValidateFile(variant.CharacterDictionary, variant.CharacterDictionarySha256, modelDirectory);
+        }
+    }
+
+    private static void ValidateVariantProvenance(OcrRecognitionVariantManifest variant)
+    {
+        if (variant.Language is not ("korean" or "thai") || string.IsNullOrWhiteSpace(variant.SourceRevision))
+            throw new InvalidOperationException("OCR 語言模型來源資訊無效。");
+        foreach (var source in new[] { variant.RecognitionSourceUrl, variant.DictionarySourceUrl })
+        {
+            if (!Uri.TryCreate(source, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+                throw new InvalidOperationException("OCR 語言模型來源必須使用 HTTPS。");
+        }
     }
 
     private static void ValidateProvenance(OcrModelManifest manifest)
