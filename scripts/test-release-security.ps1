@@ -11,6 +11,7 @@ try {
     $modelNotice = Join-Path $licenses "paddleocr-models"
     New-Item -ItemType Directory -Path $modelNotice -Force | Out-Null
     Set-Content -LiteralPath (Join-Path $modelNotice "NOTICE.md") -Value "synthetic model attribution"
+    Set-Content -LiteralPath (Join-Path $modelNotice "LICENSE.txt") -Value "synthetic Apache-2.0 license"
     foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "README.zh-TW.md")) {
         Set-Content -LiteralPath (Join-Path $root $document) -Value "synthetic release test"
     }

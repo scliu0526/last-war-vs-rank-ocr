@@ -143,18 +143,8 @@ public sealed class OnnxOcrRecognitionSource(
 
     private CtcDecoder.DecodedText SelectCommanderRecognition(
         CtcDecoder.DecodedText original,
-        CtcDecoder.DecodedText expanded)
-    {
-        var originalTarget = runtime.RecognitionVariants.Any(variant => OcrLanguageCandidateSelector.ContainsTargetScript(original.Text, variant.Language));
-        var expandedTarget = runtime.RecognitionVariants.Any(variant => OcrLanguageCandidateSelector.ContainsTargetScript(expanded.Text, variant.Language));
-        if (expandedTarget != originalTarget) return expandedTarget ? expanded : original;
-        if (expandedTarget) return expanded.Confidence > original.Confidence ? expanded : original;
-        var originalLetters = original.Text.Count(char.IsLetterOrDigit);
-        var expandedLetters = expanded.Text.Count(char.IsLetterOrDigit);
-        return (original.Text.Contains('\uFFFD') || originalLetters <= 2) && expandedLetters > originalLetters
-            ? expanded
-            : original;
-    }
+        CtcDecoder.DecodedText expanded) =>
+        OcrLanguageCandidateSelector.SelectCrop(original, expanded);
 
     private static DetectionBox ExpandWithinAnnotatedColumn(DetectionBox box, int imageWidth, int imageHeight)
     {

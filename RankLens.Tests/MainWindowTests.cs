@@ -104,6 +104,58 @@ public class MainWindowTests
                     throw new InvalidOperationException("Editing another cell reset the user's manual confirmation.");
                 }
 
+                candidate.IsSelected = false;
+                var selectionCheckBox = new CheckBox { DataContext = candidate, IsChecked = true };
+                typeof(MainWindow).GetMethod("CandidateSelectionCheckBoxClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [selectionCheckBox, new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)]);
+                typeof(MainWindow).GetMethod("CandidateCellEditEnding", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [grid, editArgs]);
+                if (!candidate.IsSelected)
+                {
+                    throw new InvalidOperationException("Checking a previously unchecked candidate was lost after leaving the cell.");
+                }
+
+                grid.ScrollIntoView(candidate);
+                grid.UpdateLayout();
+                candidateRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromItem(candidate)!;
+
+                var sameSourceCandidate = new RankingCandidate
+                {
+                    Category = RankingCategory.PendingClassification, Rank = 8, CommanderName = "Same source",
+                    AllianceName = "Alliance", Score = 8, SourceImage = imagePath,
+                    ClassificationResolved = false
+                };
+                window.Candidates.Add(sameSourceCandidate);
+                candidate.Category = RankingCategory.Tuesday;
+                var categoryEditArgs = new DataGridCellEditEndingEventArgs(
+                    grid.Columns[1], candidateRow, new ComboBox(), DataGridEditAction.Commit);
+                typeof(MainWindow).GetMethod("CandidateCellEditEnding", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [grid, categoryEditArgs]);
+                if (candidate.Category != RankingCategory.Tuesday
+                    || sameSourceCandidate.Category != RankingCategory.Tuesday
+                    || !sameSourceCandidate.ClassificationResolved)
+                {
+                    throw new InvalidOperationException("Category edit did not update every candidate from the same source image.");
+                }
+
+                var noAllianceCandidate = new RankingCandidate
+                {
+                    Category = RankingCategory.Monday, Rank = 9, CommanderName = "No alliance",
+                    AllianceName = string.Empty, NoAllianceConfirmed = true, Score = 9,
+                    SourceImage = imagePath, IsSelected = true
+                };
+                window.Candidates.Add(noAllianceCandidate);
+                grid.SelectedItem = noAllianceCandidate;
+                grid.UpdateLayout();
+                var noAllianceRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromItem(noAllianceCandidate)!;
+                var noAllianceCheckBox = new CheckBox { DataContext = noAllianceCandidate, IsChecked = true };
+                typeof(MainWindow).GetMethod("NoAllianceCheckBoxClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [noAllianceCheckBox, new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)]);
+                if (!noAllianceCandidate.IsValid || !noAllianceCandidate.IsSelected)
+                {
+                    throw new InvalidOperationException("Explicit no-alliance confirmation was not retained as valid and selected.");
+                }
+
                 var switchCandidate = new RankingCandidate
                 {
                     Category = RankingCategory.Monday, Rank = 3, CommanderName = "Switch",
@@ -198,6 +250,31 @@ public class MainWindowTests
                     || ignoredSecond.RequiresConflictResolution || ignoredSecond.IsSelected)
                 {
                     throw new InvalidOperationException("Conflict button did not ignore the selected candidate.");
+                }
+
+                var collisionFirst = new RankingCandidate
+                {
+                    Category = RankingCategory.Wednesday, Rank = 4, CommanderName = "Collision",
+                    AllianceName = "Alliance", Score = 4, SourceImage = imagePath,
+                    RequiresNameCollisionResolution = true
+                };
+                var collisionMoved = new RankingCandidate
+                {
+                    Category = RankingCategory.Wednesday, Rank = 10, CommanderName = "Collision",
+                    AllianceName = "Alliance", Score = 10, SourceImage = imagePath,
+                    RequiresNameCollisionResolution = true
+                };
+                window.Candidates.Add(collisionFirst);
+                window.Candidates.Add(collisionMoved);
+                grid.SelectedItem = collisionMoved;
+                grid.UpdateLayout();
+                typeof(MainWindow).GetMethod("MoveRankClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [null, new RoutedEventArgs(Button.ClickEvent)]);
+                if (collisionFirst.RequiresNameCollisionResolution || collisionFirst.IsSelected
+                    || collisionMoved.RequiresNameCollisionResolution || !collisionMoved.IsSelected
+                    || collisionMoved.Rank != 10)
+                {
+                    throw new InvalidOperationException("Name-collision move button did not keep the explicitly moved candidate.");
                 }
                 Directory.Delete(folder, true);
                 window.Close();

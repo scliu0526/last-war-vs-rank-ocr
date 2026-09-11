@@ -8,7 +8,7 @@ public sealed class OcrLanguageCandidateSelectorTests
     public void SelectsConfidentMixedKoreanCandidateWithoutRatioGate()
     {
         var primary = new CtcDecoder.DecodedText("pin", 0.80);
-        var mixed = new CtcDecoder.DecodedText("그린핀 pin", 0.78);
+        var mixed = new CtcDecoder.DecodedText("테스트 pin", 0.78);
 
         var selected = OcrLanguageCandidateSelector.Select(primary,
             [new OcrLanguageCandidate(OcrRecognitionLanguage.Korean, mixed)]);
@@ -19,8 +19,8 @@ public sealed class OcrLanguageCandidateSelectorTests
     [Fact]
     public void KeepsPrimaryWhenTargetScriptCandidateHasWeakEvidence()
     {
-        var primary = new CtcDecoder.DecodedText("GBgogogo", 0.95);
-        var hallucination = new CtcDecoder.DecodedText("ีGBgogogo", 0.70);
+        var primary = new CtcDecoder.DecodedText("CommanderAlpha", 0.95);
+        var hallucination = new CtcDecoder.DecodedText("ีCommanderAlpha", 0.70);
 
         var selected = OcrLanguageCandidateSelector.Select(primary,
             [new OcrLanguageCandidate(OcrRecognitionLanguage.Thai, hallucination)]);
@@ -38,5 +38,14 @@ public sealed class OcrLanguageCandidateSelectorTests
             [new OcrLanguageCandidate(OcrRecognitionLanguage.Korean, quoted)]);
 
         Assert.Equal("'김'", selected.Text);
+    }
+
+    [Fact]
+    public void ExpandedCropCannotWinOnlyBecauseOfOneHallucinatedThaiCharacter()
+    {
+        var original = new CtcDecoder.DecodedText("CommanderAlpha", 0.96);
+        var expanded = new CtcDecoder.DecodedText("ีCommanderAlpha", 0.60);
+
+        Assert.Equal(original, OcrLanguageCandidateSelector.SelectCrop(original, expanded));
     }
 }

@@ -37,7 +37,7 @@ public partial class MainWindow : Window
         AdapterComboBox.ItemsSource = gpuAdapters.Select(adapter => new GpuAdapterOption(
             adapter.Name,
             adapter.IsLikelyDirectMLCompatible,
-            adapter.IsLikelyDirectMLCompatible ? "可供 DirectML 使用" : "顯示卡狀態不可用，請使用 CPU 模式。")) .ToArray();
+            adapter.CompatibilityReason)).ToArray();
         AdapterComboBox.SelectedValue = settings.AdapterName ?? gpuAdapters.FirstOrDefault(adapter => adapter.IsLikelyDirectMLCompatible)?.Name;
         if (settings.ExecutionMode == RecognitionExecutionMode.DirectML
             && (gpuAdapters.All(adapter => !adapter.IsLikelyDirectMLCompatible)
@@ -350,7 +350,8 @@ public partial class MainWindow : Window
     {
         if (e.Row.Item is RankingCandidate candidate)
         {
-            if (string.Equals(e.Column.Header?.ToString(), "分類", StringComparison.Ordinal))
+            var header = e.Column.Header?.ToString();
+            if (string.Equals(header, "分類", StringComparison.Ordinal))
             {
                 var related = CandidateReconciler.ApplyCategoryToSource(Candidates, candidate.SourceImage, candidate.Category);
                 CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice(related, settings.ConfidenceThreshold);
@@ -360,6 +361,26 @@ public partial class MainWindow : Window
                 candidate.ClassificationResolved = candidate.Category != RankingCategory.PendingClassification;
                 CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate], settings.ConfidenceThreshold);
             }
+        }
+    }
+
+    private void CandidateSelectionCheckBoxClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is CheckBox { DataContext: RankingCandidate candidate } checkBox)
+        {
+            candidate.IsSelected = checkBox.IsChecked == true;
+            CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate], settings.ConfidenceThreshold);
+            CandidatesGrid.Items.Refresh();
+        }
+    }
+
+    private void NoAllianceCheckBoxClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is CheckBox { DataContext: RankingCandidate candidate } checkBox)
+        {
+            candidate.NoAllianceConfirmed = checkBox.IsChecked == true;
+            CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate], settings.ConfidenceThreshold);
+            CandidatesGrid.Items.Refresh();
         }
     }
 

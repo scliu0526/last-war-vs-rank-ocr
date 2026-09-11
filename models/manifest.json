@@ -4,13 +4,13 @@
   "characterDictionary": "ppocrv5_dict.txt",
   "license": "Apache-2.0; model cards and PaddleOCR notices: https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det_onnx and https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx",
   "modelVersion": "PP-OCRv5 server ONNX (official PaddlePaddle repositories)",
-  "sourceRevision": "det:dcf248c; rec:b70df21; dict:2661c7c0ef5c613e8f93c6e93b2e052399f0f854",
-  "detectionSourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det_onnx/resolve/main/inference.onnx?download=true",
-  "recognitionSourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx/resolve/main/inference.onnx?download=true",
-  "dictionarySourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx/resolve/b70df21/inference.yml",
+  "sourceRevision": "det:dcf248c4dcc064c6d030db241255f9e8fbc6733a; rec:b70df217f4fd99d14f970bad092cebe7d74cc4d1; dict:2661c7c0ef5c613e8f93c6e93b2e052399f0f854",
+  "detectionSourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_det_onnx/resolve/dcf248c4dcc064c6d030db241255f9e8fbc6733a/inference.onnx?download=true",
+  "recognitionSourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_server_rec_onnx/resolve/b70df217f4fd99d14f970bad092cebe7d74cc4d1/inference.onnx?download=true",
+  "dictionarySourceUrl": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/2661c7c0ef5c613e8f93c6e93b2e052399f0f854/ppocr/utils/dict/ppocrv5_dict.txt",
   "detectionSha256": "10803475A591F7DC623E24670FB5752EC94D39A1F8CF069AAC1B6F0CE19CFC85",
   "recognitionSha256": "D9DC333C9C7B042C6DFFB8E33D72B6F65C9C1D463D0A3C2F78174FEA55E94752",
-  "characterDictionarySha256": "2F441BB2D6A22F791C0C0934B955B91CECC8766EACD9CF48AC321B748918C950",
+  "characterDictionarySha256": "D1979E9F794C464C0D2E0B70A7FE14DD978E9DC644C0E71F14158CDF8342AF1B",
   "recognitionVariants": [
     {
       "language": "korean",

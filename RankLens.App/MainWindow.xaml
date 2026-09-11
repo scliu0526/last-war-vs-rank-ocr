@@ -65,12 +65,28 @@
                     <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                 <DataGrid Grid.Column="0" x:Name="CandidatesGrid" SelectionChanged="CandidateSelectionChanged" CellEditEnding="CandidateCellEditEnding" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" IsReadOnly="False">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="確認" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
+                    <DataGridTemplateColumn Header="確認">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox HorizontalAlignment="Center"
+                                          IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Click="CandidateSelectionCheckBoxClick" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridComboBoxColumn Header="分類" SelectedItemBinding="{Binding Category, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="排名" Binding="{Binding Rank, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="指揮官名稱" Binding="{Binding CommanderName, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="同盟名稱" Binding="{Binding AllianceName, UpdateSourceTrigger=PropertyChanged}" />
-                    <DataGridCheckBoxColumn Header="確認無同盟" Binding="{Binding NoAllianceConfirmed, UpdateSourceTrigger=PropertyChanged}" />
+                    <DataGridTemplateColumn Header="確認無同盟">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox HorizontalAlignment="Center"
+                                          IsChecked="{Binding NoAllianceConfirmed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Click="NoAllianceCheckBoxClick" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="積分" Binding="{Binding Score, UpdateSourceTrigger=PropertyChanged}" />
                     <DataGridTextColumn Header="信心度" Binding="{Binding OverallConfidence, StringFormat={}{0:P0}}" IsReadOnly="True" />
                     <DataGridTextColumn Header="狀態" Binding="{Binding ReviewStatus}" IsReadOnly="True" />

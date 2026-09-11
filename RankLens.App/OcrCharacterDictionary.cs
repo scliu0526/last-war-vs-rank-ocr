@@ -10,7 +10,7 @@ public static class OcrCharacterDictionary
         if (!Path.GetExtension(path).Equals(".yml", StringComparison.OrdinalIgnoreCase)
             && !Path.GetExtension(path).Equals(".yaml", StringComparison.OrdinalIgnoreCase))
         {
-            return lines.Select(NormalizeEntry).ToArray();
+            return new[] { "" }.Concat(lines.Select(NormalizeEntry)).Append(" ").ToArray();
         }
 
         var marker = Array.FindIndex(lines, line => line.Trim().Equals("character_dict:", StringComparison.Ordinal));

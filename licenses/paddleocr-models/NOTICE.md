@@ -9,4 +9,4 @@ RankLens may redistribute the following official PaddlePaddle PP-OCRv5 ONNX mode
 
 The model repositories identify the model license as Apache-2.0. Character dictionaries come from each recognition model repository's `inference.yml` at the pinned revisions recorded in `models/manifest.json`.
 
-Redistribution is subject to the license and notices published by the model repositories. This file is an attribution and provenance pointer; the repository model cards and PaddleOCR notices remain the authoritative license text.
+`LICENSE.txt` in this directory is the Apache License 2.0 text copied from the official PaddleOCR repository. This notice records the model provenance and is distributed with that license text.

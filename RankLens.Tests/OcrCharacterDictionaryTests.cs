@@ -30,4 +30,17 @@ public sealed class OcrCharacterDictionaryTests
         }
         finally { File.Delete(path); }
     }
+
+    [Fact]
+    public void LoadAddsCtcBlankAndSpaceToPlainDictionary()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ranklens-dict-{Guid.NewGuid():N}.txt");
+        try
+        {
+            File.WriteAllText(path, "甲\n乙\n");
+
+            Assert.Equal(["", "甲", "乙", " "], OcrCharacterDictionary.Load(path));
+        }
+        finally { File.Delete(path); }
+    }
 }

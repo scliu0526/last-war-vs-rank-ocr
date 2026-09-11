@@ -13,9 +13,9 @@ public class OnnxOcrRecognitionSourceTests
         var path = Path.Combine(Path.GetTempPath(), $"ranklens-{Guid.NewGuid():N}.png");
         try
         {
-            var pixels = new byte[320 * 480 * 4];
+            var pixels = new byte[240 * 520 * 4];
             for (var i = 0; i < pixels.Length; i += 4) { pixels[i] = 255; pixels[i + 1] = 255; pixels[i + 2] = 255; pixels[i + 3] = 255; }
-            var bitmap = BitmapSource.Create(320, 480, 96, 96, PixelFormats.Bgra32, null, pixels, 320 * 4);
+            var bitmap = BitmapSource.Create(240, 520, 96, 96, PixelFormats.Bgra32, null, pixels, 240 * 4);
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
             using (var stream = File.Create(path)) encoder.Save(stream);
 
@@ -43,13 +43,13 @@ public class OnnxOcrRecognitionSourceTests
         var path = Path.Combine(Path.GetTempPath(), $"ranklens-{Guid.NewGuid():N}.png");
         try
         {
-            var pixels = new byte[320 * 480 * 4];
+            var pixels = new byte[240 * 520 * 4];
             for (var i = 0; i < pixels.Length; i += 4) { pixels[i] = 255; pixels[i + 1] = 255; pixels[i + 2] = 255; pixels[i + 3] = 255; }
-            var bitmap = BitmapSource.Create(320, 480, 96, 96, PixelFormats.Bgra32, null, pixels, 320 * 4);
+            var bitmap = BitmapSource.Create(240, 520, 96, 96, PixelFormats.Bgra32, null, pixels, 240 * 4);
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
             using (var stream = File.Create(path)) encoder.Save(stream);
 
-            var content = "GBgogogo\tAlliance\t123";
+            var content = "CommanderAlpha\tAlliance\t123";
             var rank = "1";
             var dictionary = new[] { "" }.Concat((content + rank).Distinct().Select(character => character.ToString())).ToArray();
             var runtime = new SequenceRuntime(dictionary,
@@ -60,7 +60,7 @@ public class OnnxOcrRecognitionSourceTests
 
             var candidate = Assert.Single(candidates);
             Assert.Equal(1, candidate.Rank);
-            Assert.Equal("GBgogogo", candidate.CommanderName);
+            Assert.Equal("CommanderAlpha", candidate.CommanderName);
             Assert.Equal("Alliance", candidate.AllianceName);
             Assert.Equal(123, candidate.Score);
         }

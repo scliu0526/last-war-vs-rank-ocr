@@ -9,7 +9,9 @@ public static class ScreenshotInputValidator
     {
         using var stream = File.OpenRead(path);
         var frame = BitmapFrame.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-        if (frame.PixelWidth < minimumDimension || frame.PixelHeight < minimumDimension || frame.PixelHeight <= frame.PixelWidth)
-            throw new InvalidDataException("圖片必須是完整直向手機截圖，且解析度不足以辨識排名列。");
+        var aspectRatio = frame.PixelWidth / (double)frame.PixelHeight;
+        if (frame.PixelWidth < minimumDimension || frame.PixelHeight < minimumDimension
+            || aspectRatio is < 0.43 or > 0.49)
+            throw new InvalidDataException("圖片必須是完整、未裁切或拼接的直向手機截圖，且需維持支援的等比例解析度。");
     }
 }

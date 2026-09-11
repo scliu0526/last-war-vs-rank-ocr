@@ -68,7 +68,7 @@ foreach ($document in @("LICENSE", "THIRD-PARTY-NOTICES.md", "README.md", "READM
 }
 $modelNotice = Join-Path $out "licenses\paddleocr-models"
 New-Item -ItemType Directory -Path $modelNotice -Force | Out-Null
-Copy-Item (Join-Path $repo "licenses\paddleocr-models\NOTICE.md") (Join-Path $modelNotice "NOTICE.md") -Force
+Copy-Item (Join-Path $repo "licenses\paddleocr-models\*") $modelNotice -Force
 $globalPackages = $env:NUGET_PACKAGES
 if ([string]::IsNullOrWhiteSpace($globalPackages)) {
     $localsOutput = & dotnet nuget locals global-packages --list 2>$null

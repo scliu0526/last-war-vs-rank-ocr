@@ -32,6 +32,20 @@ public static class OcrLanguageCandidateSelector
     public static bool ContainsTargetScript(string text, OcrRecognitionLanguage language) =>
         CountTargetScript(text, language) > 0;
 
+    public static CtcDecoder.DecodedText SelectCrop(
+        CtcDecoder.DecodedText original,
+        CtcDecoder.DecodedText expanded)
+    {
+        if (expanded.Confidence > original.Confidence + 0.05) return expanded;
+        var originalLetters = original.Text.Count(char.IsLetterOrDigit);
+        var expandedLetters = expanded.Text.Count(char.IsLetterOrDigit);
+        return (original.Text.Contains('\uFFFD') || originalLetters <= 2)
+            && expandedLetters > originalLetters
+            && expanded.Confidence + 0.05 >= original.Confidence
+                ? expanded
+                : original;
+    }
+
     private static int CountTargetScript(string text, OcrRecognitionLanguage language) => language switch
     {
         OcrRecognitionLanguage.Korean => text.Count(character => character is >= '\u1100' and <= '\u11FF'

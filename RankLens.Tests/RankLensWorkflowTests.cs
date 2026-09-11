@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using RankLens.App;
@@ -16,9 +17,9 @@ public class RankLensWorkflowTests
         {
             Category = RankingCategory.Monday,
             Rank = 1,
-            CommanderName = "GBgogogo",
-            AllianceName = "[TFIP]965熟成魚中心",
-            Score = 72138569,
+            CommanderName = "CommanderAlpha",
+            AllianceName = "[DEMO] 測試聯盟",
+            Score = 12345678,
             IsSelected = true
         };
         var workflow = new RankLensWorkflow(new RankingWorkbookWriter());
@@ -46,9 +47,9 @@ public class RankLensWorkflowTests
             Assert.Equal(["排名", "指揮官名稱", "同盟名稱", "積分"],
                 rows[0].Elements<Cell>().Select(cell => cell.InnerText).ToArray());
             Assert.Equal("1", rows[1].Elements<Cell>().ElementAt(0).InnerText);
-            Assert.Equal("GBgogogo", rows[1].Elements<Cell>().ElementAt(1).InnerText);
-            Assert.Equal("[TFIP]965熟成魚中心", rows[1].Elements<Cell>().ElementAt(2).InnerText);
-            Assert.Equal("72138569", rows[1].Elements<Cell>().ElementAt(3).InnerText);
+            Assert.Equal("CommanderAlpha", rows[1].Elements<Cell>().ElementAt(1).InnerText);
+            Assert.Equal("[DEMO] 測試聯盟", rows[1].Elements<Cell>().ElementAt(2).InnerText);
+            Assert.Equal("12345678", rows[1].Elements<Cell>().ElementAt(3).InnerText);
         }
         finally
         {
@@ -60,17 +61,17 @@ public class RankLensWorkflowTests
     }
 
     [Fact]
-    public async Task ProvidedMondaySampleTextFlowsThroughParserIntoWorkbook()
+    public async Task SyntheticMondayTextFlowsThroughParserIntoWorkbook()
     {
         Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
         var parsed = OcrCandidateParser.ParseRows(
             RankingCategory.Monday,
-            "screenshot/288376_0.jpg",
+            "fixture.jpg",
             [
                 new OcrTextLine("1", .99f, 0, 10),
-                new OcrTextLine("GBgogogo", .99f, 11, 20),
-                new OcrTextLine("[TFIP]965熟成魚中心", .99f, 21, 30),
-                new OcrTextLine("72,138,569", .99f, 31, 40)
+                new OcrTextLine("CommanderAlpha", .99f, 11, 20),
+                new OcrTextLine("[DEMO] 測試聯盟", .99f, 21, 30),
+                new OcrTextLine("12,345,678", .99f, 31, 40)
             ]);
         var candidate = Assert.Single(parsed);
         candidate.IsSelected = true;
@@ -78,7 +79,7 @@ public class RankLensWorkflowTests
         var workflow = new RankLensWorkflow(new RankingWorkbookWriter());
         var session = await workflow.RecognizeAsync(
             week,
-            ["screenshot/288376_0.jpg"],
+            ["fixture.jpg"],
             new FixedRecognitionSource([candidate]));
         var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
         var path = Path.Combine(folder, week.FileName);
@@ -94,7 +95,7 @@ public class RankLensWorkflowTests
                 .Single(sheet => sheet.Name == "星期一");
             var worksheet = (WorksheetPart)document.WorkbookPart.GetPartById(monday.Id!);
             var row = worksheet.Worksheet.GetFirstChild<SheetData>()!.Elements<Row>().ElementAt(1);
-            Assert.Equal(["1", "GBgogogo", "[TFIP]965熟成魚中心", "72138569"],
+            Assert.Equal(["1", "CommanderAlpha", "[DEMO] 測試聯盟", "12345678"],
                 row.Elements<Cell>().Select(cell => cell.InnerText).ToArray());
         }
         finally
@@ -197,6 +198,69 @@ public class RankLensWorkflowTests
             }
             Assert.Equal(before, File.ReadAllBytes(path));
             Assert.False(File.Exists(path + ".ranklens.tmp"));
+
+            writer.Update(path, week, [new RankingCandidate
+            {
+                Category = RankingCategory.Monday, Rank = 1, CommanderName = "new",
+                AllianceName = "B", Score = 2, IsSelected = true
+            }]);
+            using var document = SpreadsheetDocument.Open(path, false);
+            var sheet = document.WorkbookPart!.Workbook.Sheets!.Elements<Sheet>().Single(item => item.Name == "星期一");
+            var row = ((WorksheetPart)document.WorkbookPart.GetPartById(sheet.Id!)).Worksheet
+                .GetFirstChild<SheetData>()!.Elements<Row>().ElementAt(1);
+            Assert.Equal("new", row.Elements<Cell>().ElementAt(1).InnerText);
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
+    }
+
+    [Fact]
+    public void UnknownWorkbookIsRejectedWithoutChangingIt()
+    {
+        Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(folder, week.FileName);
+        try
+        {
+            Directory.CreateDirectory(folder);
+            using (var document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook))
+            {
+                var workbookPart = document.AddWorkbookPart();
+                workbookPart.Workbook = new Workbook(new Sheets());
+                workbookPart.Workbook.Save();
+            }
+            var before = File.ReadAllBytes(path);
+
+            Assert.Throws<InvalidDataException>(() => new RankingWorkbookWriter().Update(path, week, [new RankingCandidate
+            {
+                Category = RankingCategory.Monday, Rank = 1, CommanderName = "candidate",
+                AllianceName = "A", Score = 1, IsSelected = true
+            }]));
+
+            Assert.Equal(before, File.ReadAllBytes(path));
+            Assert.False(File.Exists(path + ".ranklens.tmp"));
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
+    }
+
+    [Fact]
+    public void InvalidOutputTargetDoesNotCreateWorkbook()
+    {
+        Assert.True(RankingWeek.TryCreate(new DateOnly(2026, 9, 7), out var week));
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-tests", Guid.NewGuid().ToString("N"));
+        var invalidFolder = Path.Combine(folder, "not-a-folder");
+        try
+        {
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(invalidFolder, "keep");
+            var session = new ReviewSession(week, [new RankingCandidate
+            {
+                Category = RankingCategory.Monday, Rank = 1, CommanderName = "candidate",
+                AllianceName = "A", Score = 1, IsSelected = true
+            }]);
+
+            Assert.ThrowsAny<IOException>(() =>
+                new RankLensWorkflow(new RankingWorkbookWriter()).WriteConfirmed(invalidFolder, session));
+            Assert.Equal("keep", File.ReadAllText(invalidFolder));
         }
         finally { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
     }
