@@ -18,12 +18,24 @@ public class RankingRegionLayoutTests
         new(60, 630, 160, 670, .9f),
         new(300, 630, 600, 670, .9f),
         new(680, 630, 840, 670, .9f),
+        new(60, 785, 160, 825, .9f),
+        new(300, 785, 600, 825, .9f),
+        new(680, 785, 840, 825, .9f),
         new(60, 940, 160, 980, .9f),
         new(300, 940, 600, 980, .9f),
         new(680, 940, 840, 980, .9f),
+        new(60, 1089, 160, 1129, .9f),
+        new(300, 1089, 600, 1129, .9f),
+        new(680, 1089, 840, 1129, .9f),
         new(60, 1230, 160, 1270, .9f),
         new(300, 1230, 600, 1270, .9f),
         new(680, 1230, 840, 1270, .9f),
+        new(60, 1394, 160, 1434, .9f),
+        new(300, 1394, 600, 1434, .9f),
+        new(680, 1394, 840, 1434, .9f),
+        new(60, 1559, 160, 1599, .9f),
+        new(300, 1559, 600, 1599, .9f),
+        new(680, 1559, 840, 1599, .9f),
         new(650, 1745, 830, 1785, .9f)
     ];
 
@@ -34,13 +46,43 @@ public class RankingRegionLayoutTests
     }
 
     [Fact]
-    public void FullPageWithOneCompleteCandidateInAValidCardSlotIsAccepted()
+    public void FullPageCanUseCompleteRankRowsWhenRankHeaderIsNotDetected()
+    {
+        var withoutRankHeader = FullPageAnchors
+            .Where(box => box.Top != 375 || box.Left >= 300)
+            .ToArray();
+
+        Assert.True(RankingRegionLayout.HasFullPageStructure(withoutRankHeader, 869, 1880));
+    }
+
+    [Fact]
+    public void FullPageWithOnlyOneCompleteCandidateIsRejectedAsCropped()
     {
         var anchors = FullPageAnchors.Where(box => box.Bottom <= 405 || box.Top >= 1745);
         var oneCandidate = FullPageAnchors.Where(box => box.Top >= 480 && box.Bottom <= 520);
 
-        Assert.True(RankingRegionLayout.HasFullPageStructure(
+        Assert.False(RankingRegionLayout.HasFullPageStructure(
             anchors.Concat(oneCandidate).ToArray(), 869, 1880));
+    }
+
+    [Fact]
+    public void AlternateSevenRowFullPageLayoutIsAccepted()
+    {
+        var anchors = FullPageAnchors.Where(box => box.Bottom <= 405 || box.Top >= 1745);
+        var rows = new[] { 0.310f, 0.392f, 0.473f, 0.555f, 0.637f, 0.720f, 0.843f }
+            .SelectMany(center =>
+            {
+                var middle = center * 1880;
+                return new[]
+                {
+                    new DetectionBox(60, middle - 20, 160, middle + 20, .9f),
+                    new DetectionBox(300, middle - 20, 600, middle + 20, .9f),
+                    new DetectionBox(680, middle - 20, 840, middle + 20, .9f)
+                };
+            });
+
+        Assert.True(RankingRegionLayout.HasFullPageStructure(
+            anchors.Concat(rows).ToArray(), 869, 1880));
     }
 
     [Fact]
