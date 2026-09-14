@@ -369,7 +369,7 @@ public partial class MainWindow : Window
 
     private void CandidateCellEditEnding(object sender, System.Windows.Controls.DataGridCellEditEndingEventArgs e)
     {
-        if (e.Row.Item is RankingCandidate candidate)
+        if (e.EditAction == DataGridEditAction.Commit && e.Row.Item is RankingCandidate candidate)
         {
             hasUnsavedReview = true;
             var header = e.Column.Header?.ToString();

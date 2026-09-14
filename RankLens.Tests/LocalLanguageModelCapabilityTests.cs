@@ -24,6 +24,7 @@ public sealed class LocalLanguageModelCapabilityTests
         var manifest = new OcrModelStore().LoadManifest(manifestPath);
         using var runtime = new OcrRuntimeFactory().Create(
             new OcrRuntimeConfiguration(RecognitionExecutionMode.Cpu, 0, modelDirectory), manifest);
+        Assert.True(runtime.ProvidesPageGeometry);
         var synthetic = new DenseTensor<float>(new[] { 1, 3, 48, 320 });
 
         Assert.Contains(runtime.RunRecognition(synthetic), IsSequenceTensor);

@@ -19,6 +19,21 @@ jobs:
       - name: Restore
         run: dotnet restore RankLens.slnx
 
+      - name: Install verified OCR models
+        shell: pwsh
+        run: |
+          $manifest = Get-Content ./models/manifest.json -Raw | ConvertFrom-Json
+          ./scripts/install-ocr-models.ps1 `
+            -DetectionUrl $manifest.detectionSourceUrl `
+            -DetectionSha256 $manifest.detectionSha256 `
+            -RecognitionUrl $manifest.recognitionSourceUrl `
+            -RecognitionSha256 $manifest.recognitionSha256 `
+            -DictionaryUrl $manifest.dictionarySourceUrl `
+            -DictionarySha256 $manifest.characterDictionarySha256 `
+            -ModelVersion $manifest.modelVersion `
+            -SourceRevision $manifest.sourceRevision `
+            -LicenseNotice $manifest.license
+
       - name: Build
         run: dotnet build RankLens.slnx --no-restore --configuration Release -p:NuGetAudit=false
 

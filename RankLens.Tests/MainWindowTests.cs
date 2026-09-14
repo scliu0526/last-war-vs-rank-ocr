@@ -109,6 +109,15 @@ public class MainWindowTests
                 {
                     throw new InvalidOperationException("Editing after a saved state did not restore the unsaved-review flag.");
                 }
+                dirtyField.SetValue(window, false);
+                var cancelledEditArgs = new DataGridCellEditEndingEventArgs(
+                    grid.Columns[3], candidateRow, new TextBox(), DataGridEditAction.Cancel);
+                typeof(MainWindow).GetMethod("CandidateCellEditEnding", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, [grid, cancelledEditArgs]);
+                if (dirtyField.GetValue(window) is not false)
+                {
+                    throw new InvalidOperationException("Cancelling an unchanged edit incorrectly marked the review as unsaved.");
+                }
 
                 candidate.IsSelected = false;
                 dirtyField.SetValue(window, false);

@@ -3,6 +3,30 @@ namespace RankLens.App;
 /// <summary>Normalized regions taken from the annotated ranking screenshot.</summary>
 public static class RankingRegionLayout
 {
+    public static bool HasFullPageStructure(
+        IReadOnlyList<DetectionBox> boxes,
+        int imageWidth,
+        int imageHeight)
+    {
+        if (imageWidth <= 0 || imageHeight <= 0) return false;
+        var normalized = boxes.Select(box => new
+        {
+            X = ((box.Left + box.Right) / 2) / imageWidth,
+            Y = ((box.Top + box.Bottom) / 2) / imageHeight
+        }).ToArray();
+        var hasTitle = normalized.Any(point => point.X < 0.25f && point.Y is >= 0.03f and <= 0.09f);
+        var hasRankingTabs = normalized.Count(point => point.Y is >= 0.09f and <= 0.15f) >= 2;
+        var tableHeaders = normalized.Where(point => point.Y is >= 0.19f and <= 0.23f).ToArray();
+        var hasTableHeaders = tableHeaders.Any(point => point.X < 0.21f)
+            && tableHeaders.Any(point => point.X is >= 0.30f and <= 0.73f)
+            && tableHeaders.Any(point => point.X > 0.73f);
+        var data = normalized.Where(point => point.Y is > 0.23f and <= 0.90f).ToArray();
+        var hasCompleteRowColumns = data.Any(point => point.X is >= 0.30f and <= 0.73f)
+            && data.Any(point => point.X > 0.73f);
+        var hasFooter = normalized.Any(point => point.Y is >= 0.91f and <= 0.98f);
+        return hasTitle && hasRankingTabs && hasTableHeaders && hasCompleteRowColumns && hasFooter;
+    }
+
     public static bool IsDataBox(DetectionBox box, int imageWidth, int imageHeight)
     {
         if (imageWidth <= 0 || imageHeight <= 0) return false;

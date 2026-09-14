@@ -4,6 +4,43 @@ namespace RankLens.Tests;
 
 public class RankingRegionLayoutTests
 {
+    private static readonly DetectionBox[] FullPageAnchors =
+    [
+        new(20, 90, 130, 120, .9f),
+        new(60, 215, 300, 250, .9f),
+        new(330, 215, 560, 250, .9f),
+        new(40, 375, 160, 405, .9f),
+        new(300, 375, 600, 405, .9f),
+        new(680, 375, 840, 405, .9f),
+        new(300, 480, 600, 520, .9f),
+        new(680, 480, 840, 520, .9f),
+        new(650, 1745, 830, 1785, .9f)
+    ];
+
+    [Fact]
+    public void FullPageStructureRequiresAllAnnotatedAnchorBands()
+    {
+        Assert.True(RankingRegionLayout.HasFullPageStructure(FullPageAnchors, 869, 1880));
+    }
+
+    [Fact]
+    public void SameRatioCropWithRankingRowsButNoTitleOrTabsIsRejected()
+    {
+        var croppedLayout = FullPageAnchors.Skip(3).ToArray();
+
+        Assert.False(RankingRegionLayout.HasFullPageStructure(croppedLayout, 869, 1880));
+    }
+
+    [Fact]
+    public void SameRatioStitchWithRepeatedRankingRowsButNoFooterIsRejected()
+    {
+        var stitchedLayout = FullPageAnchors[..^1]
+            .Concat(FullPageAnchors.Where(box => (box.Top + box.Bottom) / 2f is > 430 and < 900))
+            .ToArray();
+
+        Assert.False(RankingRegionLayout.HasFullPageStructure(stitchedLayout, 869, 1880));
+    }
+
     [Fact]
     public void DataRegionIncludesRowsButExcludesTabsAndFooter()
     {

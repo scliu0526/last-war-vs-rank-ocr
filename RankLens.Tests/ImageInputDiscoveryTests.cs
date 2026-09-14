@@ -36,7 +36,9 @@ public class ImageInputDiscoveryTests
     private sealed class TrackingRecognitionSource : IRecognitionSource
     {
         private int inFlight;
+        private readonly List<WeakReference<byte[]>> imageBuffers = [];
         public int MaximumInFlight { get; private set; }
+        public int LiveImageBuffers => imageBuffers.Count(reference => reference.TryGetTarget(out _));
 
         public async Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
             IReadOnlyList<string> imagePaths,
@@ -44,10 +46,14 @@ public class ImageInputDiscoveryTests
         {
             var current = Interlocked.Increment(ref inFlight);
             MaximumInFlight = Math.Max(MaximumInFlight, current);
+            var imageBuffer = GC.AllocateUninitializedArray<byte>(1024 * 1024);
+            imageBuffer[0] = (byte)imagePaths[0].Length;
+            imageBuffers.Add(new WeakReference<byte[]>(imageBuffer));
             try
             {
                 await Task.Yield();
                 cancellationToken.ThrowIfCancellationRequested();
+                GC.KeepAlive(imageBuffer);
                 return [CreateCandidate(imagePaths[0])];
             }
             finally
@@ -166,5 +172,9 @@ public class ImageInputDiscoveryTests
         Assert.Equal(1, source.MaximumInFlight);
         Assert.Equal(100, progress[^1]);
         Assert.True(progress.Zip(progress.Skip(1), (before, after) => after >= before).All(value => value));
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        Assert.InRange(source.LiveImageBuffers, 0, 1);
     }
 }
