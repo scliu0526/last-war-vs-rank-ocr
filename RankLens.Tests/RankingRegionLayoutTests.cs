@@ -66,6 +66,16 @@ public class RankingRegionLayoutTests
     }
 
     [Fact]
+    public void EightRowLayoutWithOneMissingCardRowIsRejectedAsCropped()
+    {
+        var missingOneRow = FullPageAnchors
+            .Where(box => box.Top is < 1089 or > 1129)
+            .ToArray();
+
+        Assert.False(RankingRegionLayout.HasFullPageStructure(missingOneRow, 869, 1880));
+    }
+
+    [Fact]
     public void AlternateSevenRowFullPageLayoutIsAccepted()
     {
         var anchors = FullPageAnchors.Where(box => box.Bottom <= 405 || box.Top >= 1745);

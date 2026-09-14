@@ -71,6 +71,7 @@ public static class RankingRegionLayout
 
     private static bool FitsUniqueSlots(IReadOnlyList<float> centers, IReadOnlyList<float> layout)
     {
+        if (centers.Count != layout.Count) return false;
         var occupiedSlots = new HashSet<int>();
         return centers.All(center =>
         {
