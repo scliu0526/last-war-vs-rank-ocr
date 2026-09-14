@@ -15,12 +15,12 @@ public class RankingRegionLayoutTests
         new(60, 480, 160, 520, .9f),
         new(300, 480, 600, 520, .9f),
         new(680, 480, 840, 520, .9f),
-        new(60, 730, 160, 770, .9f),
-        new(300, 730, 600, 770, .9f),
-        new(680, 730, 840, 770, .9f),
-        new(60, 980, 160, 1020, .9f),
-        new(300, 980, 600, 1020, .9f),
-        new(680, 980, 840, 1020, .9f),
+        new(60, 630, 160, 670, .9f),
+        new(300, 630, 600, 670, .9f),
+        new(680, 630, 840, 670, .9f),
+        new(60, 940, 160, 980, .9f),
+        new(300, 940, 600, 980, .9f),
+        new(680, 940, 840, 980, .9f),
         new(60, 1230, 160, 1270, .9f),
         new(300, 1230, 600, 1270, .9f),
         new(680, 1230, 840, 1270, .9f),
@@ -62,14 +62,22 @@ public class RankingRegionLayoutTests
     }
 
     [Fact]
-    public void SameRatioStitchWithFullAnchorsAndFourClusteredRowsIsRejected()
+    public void SameRatioStitchWithFullAnchorsAndFourViewportSpanningRowsIsRejected()
     {
-        var stitchedLayout = FullPageAnchors.Select(box => box.Top >= 1230 && box.Bottom <= 1270
-                ? box with { Top = 880, Bottom = 920 }
-                : box)
-            .ToArray();
+        var anchors = FullPageAnchors.Where(box => box.Bottom <= 405 || box.Top >= 1745);
+        var stitchedRows = new[] { 0.26f, 0.45f, 0.53f, 0.66f }.SelectMany(center =>
+        {
+            var middle = center * 1880;
+            return new[]
+            {
+                new DetectionBox(60, middle - 20, 160, middle + 20, .9f),
+                new DetectionBox(300, middle - 20, 600, middle + 20, .9f),
+                new DetectionBox(680, middle - 20, 840, middle + 20, .9f)
+            };
+        });
 
-        Assert.False(RankingRegionLayout.HasFullPageStructure(stitchedLayout, 869, 1880));
+        Assert.False(RankingRegionLayout.HasFullPageStructure(
+            anchors.Concat(stitchedRows).ToArray(), 869, 1880));
     }
 
     [Fact]
@@ -78,7 +86,7 @@ public class RankingRegionLayoutTests
         var incoherent = FullPageAnchors
             .Where(box => !RankingRegionLayout.IsCommanderColumn((box.Left + box.Right) / 2, 869)
                 || (box.Top + box.Bottom) / 2f < 430)
-            .Append(new DetectionBox(300, 700, 600, 740, .9f))
+            .Append(new DetectionBox(300, 820, 600, 860, .9f))
             .ToArray();
 
         Assert.False(RankingRegionLayout.HasFullPageStructure(incoherent, 869, 1880));

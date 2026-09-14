@@ -21,6 +21,9 @@ public sealed class RankingPageStructureValidator : IRankingPageStructureValidat
 /// <summary>Normalized regions taken from the annotated ranking screenshot.</summary>
 public static class RankingRegionLayout
 {
+    private static readonly float[] CandidateRowCenters =
+        [0.263f, 0.347f, 0.428f, 0.510f, 0.590f, 0.670f, 0.752f, 0.840f];
+
     public static bool HasFullPageStructure(
         IReadOnlyList<DetectionBox> boxes,
         int imageWidth,
@@ -52,17 +55,20 @@ public static class RankingRegionLayout
                 ((box.Top + box.Bottom) / 2f) / imageHeight))
             .OrderBy(center => center)
             .ToArray();
-        var hasCandidateRowCoverage = candidateRowCenters.Length is >= 4 and <= 8
-            && candidateRowCenters[0] <= 0.32f
-            && candidateRowCenters[^1] >= 0.62f
-            && candidateRowCenters[^1] - candidateRowCenters[0] >= 0.30f;
+        var occupiedSlots = new HashSet<int>();
+        var candidateRowsFitCardSlots = candidateRowCenters.All(center =>
+        {
+            var slot = Array.FindIndex(CandidateRowCenters,
+                expected => Math.Abs(expected - center) <= 0.018f);
+            return slot >= 0 && occupiedSlots.Add(slot);
+        });
         var hasCompleteRowColumns = dataRows.Any(row =>
             row.Any(box => IsRankColumn((box.Left + box.Right) / 2, imageWidth))
             && row.Any(box => IsCommanderColumn((box.Left + box.Right) / 2, imageWidth))
             && row.Any(box => IsScoreColumn((box.Left + box.Right) / 2, imageWidth)));
         var hasFooter = normalized.Any(point => point.Y is >= 0.91f and <= 0.98f);
         return hasTitle && hasRankingTabs && hasTableHeaders && hasCompleteRowColumns
-            && hasCandidateRowCoverage
+            && candidateRowsFitCardSlots
             && hasFooter;
     }
 

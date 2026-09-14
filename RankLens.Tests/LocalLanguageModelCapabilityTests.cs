@@ -9,6 +9,10 @@ using Xunit.Sdk;
 
 namespace RankLens.Tests;
 
+[CollectionDefinition("Model capability", DisableParallelization = true)]
+public sealed class ModelCapabilityCollection;
+
+[Collection("Model capability")]
 public sealed class LocalLanguageModelCapabilityTests
 {
     [Fact]
