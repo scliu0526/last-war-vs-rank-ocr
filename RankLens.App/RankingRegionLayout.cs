@@ -44,16 +44,25 @@ public static class RankingRegionLayout
             return centerY is > 0.23f and <= 0.90f;
         });
         var dataRows = GroupRows(data, imageHeight);
-        var rowsWithCandidateColumns = dataRows.Count(row =>
+        var candidateRows = dataRows.Where(row =>
             row.Any(box => IsCommanderColumn((box.Left + box.Right) / 2, imageWidth))
-            && row.Any(box => IsScoreColumn((box.Left + box.Right) / 2, imageWidth)));
+            && row.Any(box => IsScoreColumn((box.Left + box.Right) / 2, imageWidth)))
+            .ToArray();
+        var candidateRowCenters = candidateRows.Select(row => row.Average(box =>
+                ((box.Top + box.Bottom) / 2f) / imageHeight))
+            .OrderBy(center => center)
+            .ToArray();
+        var hasCandidateRowCoverage = candidateRowCenters.Length is >= 4 and <= 8
+            && candidateRowCenters[0] <= 0.32f
+            && candidateRowCenters[^1] >= 0.62f
+            && candidateRowCenters[^1] - candidateRowCenters[0] >= 0.30f;
         var hasCompleteRowColumns = dataRows.Any(row =>
             row.Any(box => IsRankColumn((box.Left + box.Right) / 2, imageWidth))
             && row.Any(box => IsCommanderColumn((box.Left + box.Right) / 2, imageWidth))
             && row.Any(box => IsScoreColumn((box.Left + box.Right) / 2, imageWidth)));
         var hasFooter = normalized.Any(point => point.Y is >= 0.91f and <= 0.98f);
         return hasTitle && hasRankingTabs && hasTableHeaders && hasCompleteRowColumns
-            && rowsWithCandidateColumns is >= 1 and <= 8
+            && hasCandidateRowCoverage
             && hasFooter;
     }
 

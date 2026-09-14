@@ -15,6 +15,15 @@ public class RankingRegionLayoutTests
         new(60, 480, 160, 520, .9f),
         new(300, 480, 600, 520, .9f),
         new(680, 480, 840, 520, .9f),
+        new(60, 730, 160, 770, .9f),
+        new(300, 730, 600, 770, .9f),
+        new(680, 730, 840, 770, .9f),
+        new(60, 980, 160, 1020, .9f),
+        new(300, 980, 600, 1020, .9f),
+        new(680, 980, 840, 1020, .9f),
+        new(60, 1230, 160, 1270, .9f),
+        new(300, 1230, 600, 1270, .9f),
+        new(680, 1230, 840, 1270, .9f),
         new(650, 1745, 830, 1785, .9f)
     ];
 
@@ -47,6 +56,17 @@ public class RankingRegionLayoutTests
         });
         var stitchedLayout = FullPageAnchors
             .Concat(extraRows)
+            .ToArray();
+
+        Assert.False(RankingRegionLayout.HasFullPageStructure(stitchedLayout, 869, 1880));
+    }
+
+    [Fact]
+    public void SameRatioStitchWithFullAnchorsAndFourClusteredRowsIsRejected()
+    {
+        var stitchedLayout = FullPageAnchors.Select(box => box.Top >= 1230 && box.Bottom <= 1270
+                ? box with { Top = 880, Bottom = 920 }
+                : box)
             .ToArray();
 
         Assert.False(RankingRegionLayout.HasFullPageStructure(stitchedLayout, 869, 1880));

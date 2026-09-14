@@ -7,6 +7,10 @@ using RankLensApplication = RankLens.App.App;
 
 namespace RankLens.Tests;
 
+[CollectionDefinition("WPF UI", DisableParallelization = true)]
+public sealed class WpfUiCollection;
+
+[Collection("WPF UI")]
 public class MainWindowTests
 {
     [Fact]

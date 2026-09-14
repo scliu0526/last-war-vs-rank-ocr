@@ -1,5 +1,6 @@
 using Microsoft.ML.OnnxRuntime.Tensors;
 using RankLens.App;
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
@@ -81,15 +82,26 @@ public sealed class LocalLanguageModelCapabilityTests
             var manifest = new OcrModelStore().LoadManifest(manifestPath);
             using var runtime = new OcrRuntimeFactory().Create(
                 new OcrRuntimeConfiguration(RecognitionExecutionMode.Cpu, 0, modelDirectory), manifest);
+            var recognitionRuntime = Assert.Single(runtime.RecognitionVariants,
+                variant => variant.Language == OcrRecognitionLanguage.Korean);
+            var source = new ModelBackedBatchRecognitionSource(recognitionRuntime);
+            await new BatchRecognitionProcessor().ProcessAsync(paths.Take(1).ToArray(), source);
             var retainedBefore = GC.GetTotalMemory(forceFullCollection: true);
+            using var process = Process.GetCurrentProcess();
+            process.Refresh();
+            var privateBytesBefore = process.PrivateMemorySize64;
             var results = await new BatchRecognitionProcessor().ProcessAsync(
-                paths, new ModelBackedBatchRecognitionSource(runtime));
+                paths, source);
             var retainedAfter = GC.GetTotalMemory(forceFullCollection: true);
+            process.Refresh();
+            var privateBytesAfter = process.PrivateMemorySize64;
 
             Assert.Equal(100, results.Count);
             Assert.All(results, result => Assert.Null(result.Error));
             Assert.True(retainedAfter - retainedBefore < 32L * 1024 * 1024,
                 $"The 100-image batch retained {retainedAfter - retainedBefore:N0} bytes after a full collection.");
+            Assert.True(privateBytesAfter - privateBytesBefore < 128L * 1024 * 1024,
+                $"The 100-image batch increased process private memory by {privateBytesAfter - privateBytesBefore:N0} bytes after warm-up.");
         }
         finally
         {
@@ -142,7 +154,7 @@ public sealed class LocalLanguageModelCapabilityTests
         output.Dimensions.Length == 3
         && output.Dimensions[0] == 1;
 
-    private sealed class ModelBackedBatchRecognitionSource(IOcrInferenceRuntime runtime) : IRecognitionSource
+    private sealed class ModelBackedBatchRecognitionSource(IOcrRecognitionRuntime runtime) : IRecognitionSource
     {
         public async Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
             IReadOnlyList<string> imagePaths,
