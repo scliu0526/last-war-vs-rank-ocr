@@ -34,6 +34,16 @@ public class RankingRegionLayoutTests
     }
 
     [Fact]
+    public void FullPageWithOneCompleteCandidateInAValidCardSlotIsAccepted()
+    {
+        var anchors = FullPageAnchors.Where(box => box.Bottom <= 405 || box.Top >= 1745);
+        var oneCandidate = FullPageAnchors.Where(box => box.Top >= 480 && box.Bottom <= 520);
+
+        Assert.True(RankingRegionLayout.HasFullPageStructure(
+            anchors.Concat(oneCandidate).ToArray(), 869, 1880));
+    }
+
+    [Fact]
     public void SameRatioCropWithRankingRowsButNoTitleOrTabsIsRejected()
     {
         var croppedLayout = FullPageAnchors.Skip(3).ToArray();
