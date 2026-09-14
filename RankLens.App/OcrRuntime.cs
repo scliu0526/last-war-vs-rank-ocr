@@ -88,7 +88,6 @@ public interface IOcrInferenceRuntime : IDisposable
     IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor);
     IReadOnlyList<string> Dictionary { get; }
     IReadOnlyList<IOcrRecognitionRuntime> RecognitionVariants => [];
-    bool ProvidesPageGeometry => false;
 }
 
 public interface IOcrRecognitionRuntime : IDisposable
@@ -126,7 +125,6 @@ public sealed class OcrRuntime(
     public InferenceSession Recognition { get; } = recognition;
     public IReadOnlyList<string> Dictionary { get; } = dictionary;
     public IReadOnlyList<IOcrRecognitionRuntime> RecognitionVariants { get; } = recognitionVariants ?? [];
-    public bool ProvidesPageGeometry => true;
 
     public IReadOnlyList<OcrTensorOutput> RunDetection(DenseTensor<float> imageTensor)
     {

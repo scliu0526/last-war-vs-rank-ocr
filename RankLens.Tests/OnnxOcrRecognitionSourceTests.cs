@@ -26,7 +26,7 @@ public class OnnxOcrRecognitionSourceTests
                 MakeRecognition(dictionary, recognitionText));
             Assert.Equal(recognitionText, OcrRecognitionDecoder.Decode(MakeRecognition(dictionary, recognitionText), dictionary));
             Assert.Single(OcrCandidateParser.Parse(RankingCategory.PendingClassification, path, [new OcrTextLine(recognitionText, .9f, 0, 8)], .5));
-            var candidates = await new OnnxOcrRecognitionSource(runtime, 0.5f, 0.5).RecognizeAsync([path]);
+            var candidates = await new OnnxOcrRecognitionSource(runtime, 0.5f, 0.5, new AcceptingPageStructureValidator()).RecognizeAsync([path]);
 
             var candidate = Assert.Single(candidates);
             Assert.Equal(1, candidate.Rank);
@@ -56,13 +56,36 @@ public class OnnxOcrRecognitionSourceTests
                 new OcrTensorOutput("det", [1, 1, 2, 2], [0, 0, 0.9f, 0]),
                 [MakeRecognition(dictionary, content), MakeRecognition(dictionary, rank)]);
 
-            var candidates = await new OnnxOcrRecognitionSource(runtime, 0.5f, 0.5).RecognizeAsync([path]);
+            var candidates = await new OnnxOcrRecognitionSource(runtime, 0.5f, 0.5, new AcceptingPageStructureValidator()).RecognizeAsync([path]);
 
             var candidate = Assert.Single(candidates);
             Assert.Equal(1, candidate.Rank);
             Assert.Equal("CommanderAlpha", candidate.CommanderName);
             Assert.Equal("Alliance", candidate.AllianceName);
             Assert.Equal(123, candidate.Score);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public async Task DefaultPageStructureValidatorRejectsIncompleteDetectionLayout()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ranklens-{Guid.NewGuid():N}.png");
+        try
+        {
+            var pixels = new byte[240 * 520 * 4];
+            var bitmap = BitmapSource.Create(240, 520, 96, 96, PixelFormats.Bgra32, null, pixels, 240 * 4);
+            var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using (var stream = File.Create(path)) encoder.Save(stream);
+            var dictionary = new[] { "", "1" };
+            var runtime = new FakeRuntime(dictionary,
+                new OcrTensorOutput("det", [1, 1, 2, 2], [0.9f, 0, 0, 0]),
+                MakeRecognition(dictionary, "1"));
+
+            var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+                new OnnxOcrRecognitionSource(runtime, 0.5f, 0.5).RecognizeAsync([path]));
+
+            Assert.Contains("完整排名頁面", error.Message);
         }
         finally { File.Delete(path); }
     }
@@ -103,5 +126,10 @@ public class OnnxOcrRecognitionSourceTests
         public IReadOnlyList<OcrTensorOutput> RunRecognition(DenseTensor<float> imageTensor) =>
             [recognitions[Math.Min(recognitionIndex++, recognitions.Count - 1)]];
         public void Dispose() { }
+    }
+
+    private sealed class AcceptingPageStructureValidator : IRankingPageStructureValidator
+    {
+        public void Validate(IReadOnlyList<DetectionBox> boxes, int imageWidth, int imageHeight) { }
     }
 }

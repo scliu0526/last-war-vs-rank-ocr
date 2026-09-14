@@ -8,7 +8,8 @@ namespace RankLens.App;
 public sealed class OnnxOcrRecognitionSource(
     IOcrInferenceRuntime runtime,
     float detectionThreshold = 0.30f,
-    double textConfidenceThreshold = 0.50) : IRecognitionSource
+    double textConfidenceThreshold = 0.50,
+    IRankingPageStructureValidator? pageStructureValidator = null) : IRecognitionSource
 {
     public async Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
         IReadOnlyList<string> imagePaths,
@@ -26,11 +27,8 @@ public sealed class OnnxOcrRecognitionSource(
                 image.Tensor.Dimensions[3], image.Tensor.Dimensions[2])
             .OrderBy(box => box.Top).ThenBy(box => box.Left)
             .ToArray();
-        if (runtime.ProvidesPageGeometry
-            && !RankingRegionLayout.HasFullPageStructure(boxes, image.OriginalWidth, image.OriginalHeight))
-        {
-            throw new InvalidDataException("圖片缺少完整排名頁面的標題、頁籤、表頭、排名列或底部區域，可能已裁切或拼接。");
-        }
+        (pageStructureValidator ?? new RankingPageStructureValidator())
+            .Validate(boxes, image.OriginalWidth, image.OriginalHeight);
         var dataBoxes = boxes.Where(box => RankingRegionLayout.IsDataBox(box, image.OriginalWidth, image.OriginalHeight)).ToArray();
         var rankingColumnBoxes = dataBoxes.Where(box =>
             RankingRegionLayout.IsRankingColumnBox(box, image.OriginalWidth, image.OriginalHeight)).ToArray();

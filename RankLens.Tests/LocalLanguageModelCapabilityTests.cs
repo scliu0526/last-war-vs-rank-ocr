@@ -24,7 +24,6 @@ public sealed class LocalLanguageModelCapabilityTests
         var manifest = new OcrModelStore().LoadManifest(manifestPath);
         using var runtime = new OcrRuntimeFactory().Create(
             new OcrRuntimeConfiguration(RecognitionExecutionMode.Cpu, 0, modelDirectory), manifest);
-        Assert.True(runtime.ProvidesPageGeometry);
         var synthetic = new DenseTensor<float>(new[] { 1, 3, 48, 320 });
 
         Assert.Contains(runtime.RunRecognition(synthetic), IsSequenceTensor);
@@ -47,6 +46,55 @@ public sealed class LocalLanguageModelCapabilityTests
             "日本", "Yu Gothic UI", "ja-JP", runtime.RunRecognition, runtime.Dictionary));
         Assert.Equal("กขค", await RecognizeRenderedTextAsync(
             "กขค", "Leelawadee UI", "th-TH", thai.RunRecognition, thai.Dictionary));
+    }
+
+    [Fact]
+    public async Task HundredImageBatchDoesNotRetainProductionPreprocessingOrOnnxBuffers()
+    {
+        var modelDirectory = Path.Combine(AppContext.BaseDirectory, "models");
+        var manifestPath = Path.Combine(modelDirectory, "manifest.json");
+        if (!File.Exists(manifestPath)
+            || !File.Exists(Path.Combine(modelDirectory, "PP-OCRv5_det.onnx")))
+        {
+            throw SkipException.ForSkip("Local OCR model binaries are intentionally absent from Git and CI installs them before this release gate.");
+        }
+
+        var folder = Path.Combine(Path.GetTempPath(), "ranklens-model-batch", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var first = Path.Combine(folder, "001.png");
+            var pixels = new byte[460 * 1000 * 4];
+            Array.Fill<byte>(pixels, 255);
+            var bitmap = BitmapSource.Create(460, 1000, 96, 96, PixelFormats.Bgra32, null, pixels, 460 * 4);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using (var stream = File.Create(first)) encoder.Save(stream);
+            var paths = new List<string> { first };
+            for (var index = 2; index <= 100; index++)
+            {
+                var path = Path.Combine(folder, $"{index:000}.png");
+                File.Copy(first, path);
+                paths.Add(path);
+            }
+
+            var manifest = new OcrModelStore().LoadManifest(manifestPath);
+            using var runtime = new OcrRuntimeFactory().Create(
+                new OcrRuntimeConfiguration(RecognitionExecutionMode.Cpu, 0, modelDirectory), manifest);
+            var retainedBefore = GC.GetTotalMemory(forceFullCollection: true);
+            var results = await new BatchRecognitionProcessor().ProcessAsync(
+                paths, new ModelBackedBatchRecognitionSource(runtime));
+            var retainedAfter = GC.GetTotalMemory(forceFullCollection: true);
+
+            Assert.Equal(100, results.Count);
+            Assert.All(results, result => Assert.Null(result.Error));
+            Assert.True(retainedAfter - retainedBefore < 32L * 1024 * 1024,
+                $"The 100-image batch retained {retainedAfter - retainedBefore:N0} bytes after a full collection.");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     private static async Task<string> RecognizeRenderedTextAsync(
@@ -93,4 +141,27 @@ public sealed class LocalLanguageModelCapabilityTests
     private static bool IsSequenceTensor(OcrTensorOutput output) =>
         output.Dimensions.Length == 3
         && output.Dimensions[0] == 1;
+
+    private sealed class ModelBackedBatchRecognitionSource(IOcrInferenceRuntime runtime) : IRecognitionSource
+    {
+        public async Task<IReadOnlyList<RankingCandidate>> RecognizeAsync(
+            IReadOnlyList<string> imagePaths,
+            CancellationToken cancellationToken = default)
+        {
+            var image = await OcrImagePreprocessor.LoadAsync(imagePaths[0], cancellationToken: cancellationToken);
+            var tensor = OcrImagePreprocessor.CropAndResize(
+                image, new DetectionBox(0, 0, image.OriginalWidth, image.OriginalHeight, 1));
+            if (!runtime.RunRecognition(tensor).Any(IsSequenceTensor))
+                throw new InvalidDataException("Recognition model did not return a sequence tensor.");
+            return [new RankingCandidate
+            {
+                Category = RankingCategory.Monday,
+                Rank = 1,
+                CommanderName = "Synthetic",
+                AllianceName = "[TEST]",
+                Score = 1,
+                SourceImage = imagePaths[0]
+            }];
+        }
+    }
 }

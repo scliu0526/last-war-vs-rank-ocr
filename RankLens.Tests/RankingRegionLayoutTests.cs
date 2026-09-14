@@ -12,6 +12,7 @@ public class RankingRegionLayoutTests
         new(40, 375, 160, 405, .9f),
         new(300, 375, 600, 405, .9f),
         new(680, 375, 840, 405, .9f),
+        new(60, 480, 160, 520, .9f),
         new(300, 480, 600, 520, .9f),
         new(680, 480, 840, 520, .9f),
         new(650, 1745, 830, 1785, .9f)
@@ -32,13 +33,35 @@ public class RankingRegionLayoutTests
     }
 
     [Fact]
-    public void SameRatioStitchWithRepeatedRankingRowsButNoFooterIsRejected()
+    public void SameRatioStitchWithFullAnchorsAndTooManyRankingRowsIsRejected()
     {
-        var stitchedLayout = FullPageAnchors[..^1]
-            .Concat(FullPageAnchors.Where(box => (box.Top + box.Bottom) / 2f is > 430 and < 900))
+        var extraRows = Enumerable.Range(1, 8).SelectMany(index =>
+        {
+            var top = 480 + index * 100;
+            return new[]
+            {
+                new DetectionBox(60, top, 160, top + 40, .9f),
+                new DetectionBox(300, top, 600, top + 40, .9f),
+                new DetectionBox(680, top, 840, top + 40, .9f)
+            };
+        });
+        var stitchedLayout = FullPageAnchors
+            .Concat(extraRows)
             .ToArray();
 
         Assert.False(RankingRegionLayout.HasFullPageStructure(stitchedLayout, 869, 1880));
+    }
+
+    [Fact]
+    public void ColumnsFromDifferentVerticalGroupsDoNotFormACompleteRankingRow()
+    {
+        var incoherent = FullPageAnchors
+            .Where(box => !RankingRegionLayout.IsCommanderColumn((box.Left + box.Right) / 2, 869)
+                || (box.Top + box.Bottom) / 2f < 430)
+            .Append(new DetectionBox(300, 700, 600, 740, .9f))
+            .ToArray();
+
+        Assert.False(RankingRegionLayout.HasFullPageStructure(incoherent, 869, 1880));
     }
 
     [Fact]
