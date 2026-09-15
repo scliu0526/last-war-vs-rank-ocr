@@ -393,7 +393,6 @@ public partial class MainWindow : Window
             candidate.IsSelected = checkBox.IsChecked == true;
             CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate], settings.ConfidenceThreshold);
             hasUnsavedReview = true;
-            CandidatesGrid.Items.Refresh();
         }
     }
 
@@ -404,7 +403,6 @@ public partial class MainWindow : Window
             candidate.NoAllianceConfirmed = checkBox.IsChecked == true;
             CandidateSelectionPolicy.RevalidateWithoutResettingUserChoice([candidate], settings.ConfidenceThreshold);
             hasUnsavedReview = true;
-            CandidatesGrid.Items.Refresh();
         }
     }
 

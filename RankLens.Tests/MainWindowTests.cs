@@ -125,9 +125,21 @@ public class MainWindowTests
 
                 candidate.IsSelected = false;
                 dirtyField.SetValue(window, false);
-                var selectionCheckBox = new CheckBox { DataContext = candidate, IsChecked = true };
+                grid.ScrollIntoView(candidate);
+                grid.UpdateLayout();
+                var selectionRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromItem(candidate)!;
+                var selectionCheckBox = FindVisualChild<CheckBox>(selectionRow)
+                    ?? throw new InvalidOperationException("Candidate selection checkbox was not generated.");
+                selectionCheckBox.IsChecked = true;
                 typeof(MainWindow).GetMethod("CandidateSelectionCheckBoxClick", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(window, [selectionCheckBox, new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)]);
+                grid.UpdateLayout();
+                var refreshedRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromItem(candidate)!;
+                var refreshedCheckBox = FindVisualChild<CheckBox>(refreshedRow);
+                if (refreshedCheckBox?.IsChecked != true)
+                {
+                    throw new InvalidOperationException("Checking a previously unchecked candidate was not reflected after the UI update.");
+                }
                 typeof(MainWindow).GetMethod("CandidateCellEditEnding", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(window, [grid, editArgs]);
                 if (!candidate.IsSelected)
@@ -328,4 +340,15 @@ public class MainWindowTests
         Assert.Equal("source.png", sourceLabel);
     }
 
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, index);
+            if (child is T match) return match;
+            if (FindVisualChild<T>(child) is { } nested) return nested;
+        }
+
+        return null;
+    }
 }
