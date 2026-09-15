@@ -49,15 +49,16 @@
                 </Grid>
             </TabItem>
             <TabItem x:Name="ReviewTab" Header="候選確認">
-                <Grid Margin="16"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <WrapPanel Grid.Row="0">
-                        <Button Click="SelectCandidateClick" Content="選取候選" Padding="10,3" />
-                        <Button Margin="4,0,0,0" Click="MoveRankClick" Content="套用新名次" Padding="10,3" />
-                        <Button Margin="4,0,0,0" Click="KeepBothClick" Content="保留此筆" Padding="10,3" />
-                        <Button Margin="4,0,0,0" Click="IgnoreCandidateClick" Content="忽略新資料" Padding="10,3" />
-                        <TextBlock Margin="18,0,0,0" VerticalAlignment="Center" Foreground="DarkSlateGray" Text="點選列後可編輯欄位並確認資料。" />
-                    </WrapPanel>
-                    <DataGrid Grid.Row="1" Margin="0,14,0,0" x:Name="CandidatesGrid" SelectionChanged="CandidateSelectionChanged" CellEditEnding="CandidateCellEditEnding" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" IsReadOnly="False">
+                <Grid Margin="16"><Grid.ColumnDefinitions><ColumnDefinition Width="2.2*" /><ColumnDefinition Width="1.25*" /></Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0" Margin="0,0,16,0"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                        <WrapPanel Grid.Row="0">
+                            <Button Click="SelectCandidateClick" Content="選取候選" Padding="10,3" />
+                            <Button Margin="4,0,0,0" Click="MoveRankClick" Content="套用新名次" Padding="10,3" />
+                            <Button Margin="4,0,0,0" Click="KeepBothClick" Content="保留此筆" Padding="10,3" />
+                            <Button Margin="4,0,0,0" Click="IgnoreCandidateClick" Content="忽略新資料" Padding="10,3" />
+                            <TextBlock Margin="18,0,0,0" VerticalAlignment="Center" Foreground="DarkSlateGray" Text="點選列後可編輯欄位並確認資料。" />
+                        </WrapPanel>
+                        <DataGrid Grid.Row="1" Margin="0,14,0,0" x:Name="CandidatesGrid" SelectionChanged="CandidateSelectionChanged" CellEditEnding="CandidateCellEditEnding" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" IsReadOnly="False">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="確認"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox HorizontalAlignment="Center" IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Click="CandidateSelectionCheckBoxClick" /></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                             <DataGridComboBoxColumn Header="分類" SelectedItemBinding="{Binding Category, UpdateSourceTrigger=PropertyChanged}" />
@@ -69,22 +70,19 @@
                             <DataGridTextColumn Header="信心度" Binding="{Binding OverallConfidence, StringFormat={}{0:P0}}" IsReadOnly="True" />
                             <DataGridTextColumn Header="狀態" Binding="{Binding ReviewStatus}" IsReadOnly="True" />
                         </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
-            <TabItem Header="圖片預覽">
-                <Grid Margin="16"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <Grid Grid.Row="0" Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" x:Name="SourceImageLabel" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="Gray" />
-                        <TextBlock Grid.Column="1" x:Name="SourceGeometryLabel" Margin="16,0,16,0" VerticalAlignment="Center" Foreground="Gray" />
-                        <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="來源：" />
-                        <ListBox Grid.Column="3" x:Name="SourceList" Width="260" Height="48" SelectionChanged="SourceSelectionChanged" DisplayMemberPath="ImagePath" />
+                        </DataGrid>
                     </Grid>
-                    <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" CornerRadius="6"><Grid>
-                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Margin="12,10,12,8" Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="縮放：" /><Slider x:Name="SourceZoomSlider" Width="180" Margin="8,0,0,0" Minimum="0.5" Maximum="3" Value="1" TickFrequency="0.25" IsSnapToTickEnabled="True" ValueChanged="SourceZoomChanged" /><TextBlock x:Name="SourceZoomLabel" Margin="8,0,0,0" VerticalAlignment="Center" Text="100%" /></StackPanel>
-                        <ScrollViewer Grid.Row="1" Margin="12,0,12,12" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"><Grid x:Name="SourceCanvasHost" LayoutTransform="{x:Null}"><Image x:Name="SourceImagePreview" Stretch="None" HorizontalAlignment="Left" VerticalAlignment="Top" /><Canvas x:Name="SourceOverlay" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top"><Rectangle x:Name="SourceHighlight" Fill="#55FFD700" Stroke="Goldenrod" StrokeThickness="2" /></Canvas></Grid></ScrollViewer>
-                    </Grid></Border>
+                    <GroupBox Grid.Column="1" Header="圖片預覽" Padding="10">
+                        <Grid><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" x:Name="SourceImageLabel" TextWrapping="Wrap" Foreground="Gray" />
+                            <StackPanel Grid.Row="1" Margin="0,10,0,10">
+                                <TextBlock x:Name="SourceGeometryLabel" Foreground="Gray" />
+                                <ListBox x:Name="SourceList" Height="52" Margin="0,8,0,0" SelectionChanged="SourceSelectionChanged" DisplayMemberPath="ImagePath" />
+                                <StackPanel Margin="0,8,0,0" Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="縮放：" /><Slider x:Name="SourceZoomSlider" Width="140" Margin="8,0,0,0" Minimum="0.5" Maximum="3" Value="1" TickFrequency="0.25" IsSnapToTickEnabled="True" ValueChanged="SourceZoomChanged" /><TextBlock x:Name="SourceZoomLabel" Margin="8,0,0,0" VerticalAlignment="Center" Text="100%" /></StackPanel>
+                            </StackPanel>
+                            <Border Grid.Row="2" BorderBrush="LightGray" BorderThickness="1" CornerRadius="6"><ScrollViewer Margin="8" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"><Grid x:Name="SourceCanvasHost" LayoutTransform="{x:Null}"><Image x:Name="SourceImagePreview" Stretch="None" HorizontalAlignment="Left" VerticalAlignment="Top" /><Canvas x:Name="SourceOverlay" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top"><Rectangle x:Name="SourceHighlight" Fill="#55FFD700" Stroke="Goldenrod" StrokeThickness="2" /></Canvas></Grid></ScrollViewer></Border>
+                        </Grid>
+                    </GroupBox>
                 </Grid>
             </TabItem>
             <TabItem Header="輸出與 Log">
