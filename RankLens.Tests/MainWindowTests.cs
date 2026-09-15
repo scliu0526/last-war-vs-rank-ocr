@@ -35,6 +35,8 @@ public class MainWindowTests
                 typeof(RankLensApplication).GetMethod("OnStartup", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(application, [null]);
                 var window = (MainWindow)application.MainWindow!;
+                var mainTabs = (TabControl)window.FindName("MainTabs")!;
+                mainTabs.SelectedIndex = 1;
                 title = window.Title;
                 if (window.Content is Grid root)
                 {
